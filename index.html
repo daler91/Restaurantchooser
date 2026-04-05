@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Picker - Waterloo / Cedar Falls</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .filter-btn {
+            padding: 0.4rem 1rem;
+            border: 2px solid #e94560;
+            background: transparent;
+            color: #e94560;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .filter-btn.active, .filter-btn:hover {
+            background: #e94560;
+            color: #fff;
+        }
+        #pick-btn {
+            padding: 1rem 3rem;
+            font-size: 1.4rem;
+            border: none;
+            border-radius: 12px;
+            background: #e94560;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+        }
+        #pick-btn:hover { transform: scale(1.05); }
+        #pick-btn:active { transform: scale(0.97); }
+        #result {
+            margin-top: 2rem;
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            width: 100%;
+            animation: popIn 0.35s ease;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .card h2 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #e94560; }
+        .card .cuisine { font-size: 1rem; color: #ccc; margin-bottom: 0.3rem; }
+        .card .location { font-size: 0.9rem; color: #999; margin-bottom: 0.6rem; }
+        .card .price { font-size: 1rem; }
+        .card a {
+            display: inline-block;
+            margin-top: 0.8rem;
+            color: #e94560;
+            text-decoration: none;
+            border-bottom: 1px solid #e94560;
+        }
+        .spin .card { animation: none; }
+        @keyframes slotSpin {
+            0% { opacity: 0; transform: translateY(-20px); }
+            50% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+        .spinning-name {
+            animation: slotSpin 0.15s linear;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Where should we eat?</h1>
+    <p class="subtitle">Waterloo &amp; Cedar Falls, Iowa</p>
+
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="american">American</button>
+        <button class="filter-btn" data-filter="mexican">Mexican</button>
+        <button class="filter-btn" data-filter="asian">Asian</button>
+        <button class="filter-btn" data-filter="italian">Italian</button>
+        <button class="filter-btn" data-filter="pizza">Pizza</button>
+        <button class="filter-btn" data-filter="bbq">BBQ</button>
+        <button class="filter-btn" data-filter="breakfast">Breakfast</button>
+        <button class="filter-btn" data-filter="fast">Fast Food</button>
+    </div>
+
+    <button id="pick-btn">Pick a Restaurant!</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+const restaurants = [
+    // American
+    { name: "Montage", cuisine: "American", category: "american", location: "Cedar Falls", price: "$$", map: "Montage+Cedar+Falls+IA" },
+    { name: "Becker's On the Avenue", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Beckers+On+the+Avenue+Cedar+Falls+IA" },
+    { name: "The Brown Bottle", cuisine: "American / Italian", category: "american", location: "Waterloo", price: "$$", map: "The+Brown+Bottle+Waterloo+IA" },
+    { name: "Galleria de Paco", cuisine: "American / Fine Dining", category: "american", location: "Waterloo", price: "$$$", map: "Galleria+de+Paco+Waterloo+IA" },
+    { name: "SingleSpeed Brewing Co", cuisine: "American / Brewpub", category: "american", location: "Waterloo", price: "$$", map: "SingleSpeed+Brewing+Co+Waterloo+IA" },
+    { name: "Peppers Grill & Sports Bar", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Peppers+Grill+Cedar+Falls+IA" },
+    { name: "Whiskey Road", cuisine: "American", category: "american", location: "Cedar Falls", price: "$$", map: "Whiskey+Road+Cedar+Falls+IA" },
+    { name: "Tony's La Pizzeria", cuisine: "Italian / American", category: "american", location: "Waterloo", price: "$$", map: "Tonys+La+Pizzeria+Waterloo+IA" },
+    { name: "The Brass Tap", cuisine: "American / Gastropub", category: "american", location: "Waterloo", price: "$$", map: "The+Brass+Tap+Waterloo+IA" },
+    { name: "Doughy's", cuisine: "American / Comfort Food", category: "american", location: "Waterloo", price: "$", map: "Doughys+Waterloo+IA" },
+    { name: "Screaming Eagle", cuisine: "American", category: "american", location: "Waterloo", price: "$$", map: "Screaming+Eagle+Waterloo+IA" },
+
+    // Mexican
+    { name: "Los Cabos Mexican Grill", cuisine: "Mexican", category: "mexican", location: "Cedar Falls", price: "$$", map: "Los+Cabos+Mexican+Grill+Cedar+Falls+IA" },
+    { name: "Mi Mexico", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$", map: "Mi+Mexico+Waterloo+IA" },
+    { name: "Cancun Mexican Bar & Grill", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$$", map: "Cancun+Mexican+Bar+Grill+Waterloo+IA" },
+    { name: "Casa De Oro", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$", map: "Casa+De+Oro+Waterloo+IA" },
+    { name: "El Patron Mexican Grill", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$$", map: "El+Patron+Mexican+Grill+Waterloo+IA" },
+
+    // Asian
+    { name: "Thai Bistro", cuisine: "Thai", category: "asian", location: "Cedar Falls", price: "$$", map: "Thai+Bistro+Cedar+Falls+IA" },
+    { name: "Pho & Grill", cuisine: "Vietnamese", category: "asian", location: "Waterloo", price: "$", map: "Pho+and+Grill+Waterloo+IA" },
+    { name: "China Garden", cuisine: "Chinese", category: "asian", location: "Waterloo", price: "$", map: "China+Garden+Waterloo+IA" },
+    { name: "Hibachi Grill & Supreme Buffet", cuisine: "Asian Buffet", category: "asian", location: "Waterloo", price: "$$", map: "Hibachi+Grill+Supreme+Buffet+Waterloo+IA" },
+    { name: "Sakura Japanese Steakhouse", cuisine: "Japanese", category: "asian", location: "Waterloo", price: "$$$", map: "Sakura+Japanese+Steakhouse+Waterloo+IA" },
+    { name: "Golden China", cuisine: "Chinese", category: "asian", location: "Cedar Falls", price: "$", map: "Golden+China+Cedar+Falls+IA" },
+
+    // Italian
+    { name: "Olive Garden", cuisine: "Italian", category: "italian", location: "Waterloo", price: "$$", map: "Olive+Garden+Waterloo+IA" },
+    { name: "The Brown Bottle", cuisine: "Italian / American", category: "italian", location: "Waterloo", price: "$$", map: "The+Brown+Bottle+Waterloo+IA" },
+
+    // Pizza
+    { name: "Casey's", cuisine: "Pizza", category: "pizza", location: "Waterloo / Cedar Falls", price: "$", map: "Caseys+Waterloo+IA" },
+    { name: "Happy Joe's Pizza", cuisine: "Pizza", category: "pizza", location: "Waterloo", price: "$$", map: "Happy+Joes+Pizza+Waterloo+IA" },
+    { name: "Domino's Pizza", cuisine: "Pizza", category: "pizza", location: "Waterloo / Cedar Falls", price: "$", map: "Dominos+Pizza+Waterloo+IA" },
+    { name: "Pizza Ranch", cuisine: "Pizza / Buffet", category: "pizza", location: "Waterloo", price: "$$", map: "Pizza+Ranch+Waterloo+IA" },
+    { name: "Toppers Pizza", cuisine: "Pizza", category: "pizza", location: "Cedar Falls", price: "$", map: "Toppers+Pizza+Cedar+Falls+IA" },
+
+    // BBQ
+    { name: "Famous Dave's BBQ", cuisine: "BBQ", category: "bbq", location: "Waterloo", price: "$$", map: "Famous+Daves+BBQ+Waterloo+IA" },
+    { name: "Rudy's Tacos", cuisine: "Tex-Mex / BBQ", category: "bbq", location: "Waterloo", price: "$", map: "Rudys+Tacos+Waterloo+IA" },
+
+    // Breakfast
+    { name: "Lincoln Perk", cuisine: "Coffee / Breakfast", category: "breakfast", location: "Cedar Falls", price: "$", map: "Lincoln+Perk+Cedar+Falls+IA" },
+    { name: "IHOP", cuisine: "Breakfast", category: "breakfast", location: "Waterloo", price: "$", map: "IHOP+Waterloo+IA" },
+    { name: "Perkins Restaurant", cuisine: "Breakfast / American", category: "breakfast", location: "Waterloo", price: "$$", map: "Perkins+Restaurant+Waterloo+IA" },
+    { name: "Village Inn", cuisine: "Breakfast / American", category: "breakfast", location: "Cedar Falls", price: "$", map: "Village+Inn+Cedar+Falls+IA" },
+
+    // Fast Food
+    { name: "Chick-fil-A", cuisine: "Fast Food / Chicken", category: "fast", location: "Waterloo", price: "$", map: "Chick+fil+A+Waterloo+IA" },
+    { name: "Culver's", cuisine: "Fast Food / Burgers", category: "fast", location: "Waterloo / Cedar Falls", price: "$", map: "Culvers+Waterloo+IA" },
+    { name: "Raising Cane's", cuisine: "Fast Food / Chicken", category: "fast", location: "Cedar Falls", price: "$", map: "Raising+Canes+Cedar+Falls+IA" },
+    { name: "Taco Bell", cuisine: "Fast Food / Mexican", category: "fast", location: "Waterloo / Cedar Falls", price: "$", map: "Taco+Bell+Waterloo+IA" },
+    { name: "Arby's", cuisine: "Fast Food", category: "fast", location: "Waterloo", price: "$", map: "Arbys+Waterloo+IA" },
+    { name: "Freddy's Frozen Custard", cuisine: "Fast Food / Burgers", category: "fast", location: "Waterloo", price: "$", map: "Freddys+Frozen+Custard+Waterloo+IA" },
+    { name: "Panera Bread", cuisine: "Fast Casual", category: "fast", location: "Waterloo", price: "$$", map: "Panera+Bread+Waterloo+IA" },
+    { name: "Wendy's", cuisine: "Fast Food / Burgers", category: "fast", location: "Waterloo / Cedar Falls", price: "$", map: "Wendys+Waterloo+IA" },
+];
+
+let activeFilter = "all";
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+    });
+});
+
+function getFiltered() {
+    if (activeFilter === "all") return restaurants;
+    return restaurants.filter(r => r.category === activeFilter);
+}
+
+function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function renderCard(r) {
+    return `<div class="card">
+        <h2>${r.name}</h2>
+        <div class="cuisine">${r.cuisine}</div>
+        <div class="location">${r.location}</div>
+        <div class="price">${r.price}</div>
+        <a href="https://www.google.com/maps/search/${r.map}" target="_blank" rel="noopener">Open in Google Maps</a>
+    </div>`;
+}
+
+const pickBtn = document.getElementById("pick-btn");
+const result = document.getElementById("result");
+
+pickBtn.addEventListener("click", () => {
+    const pool = getFiltered();
+    if (pool.length === 0) {
+        result.innerHTML = `<div class="card"><h2>No restaurants found</h2></div>`;
+        return;
+    }
+
+    pickBtn.disabled = true;
+    let spins = 0;
+    const totalSpins = 12;
+    const interval = setInterval(() => {
+        const r = pickRandom(pool);
+        result.innerHTML = `<div class="card"><h2 class="spinning-name">${r.name}</h2></div>`;
+        spins++;
+        if (spins >= totalSpins) {
+            clearInterval(interval);
+            const winner = pickRandom(pool);
+            result.innerHTML = renderCard(winner);
+            pickBtn.disabled = false;
+        }
+    }, 100);
+});
+</script>
+</body>
+</html>
