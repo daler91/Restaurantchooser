@@ -188,6 +188,7 @@ const FALLBACK_RESTAURANTS = [
   {n:"The Stuffed Olive",c:"Seafood / Fine Dining",t:["fine"],a:"620 E 18th St, Cedar Falls",p:"$$$"},
   {n:"Table 1912",c:"Fine Dining",t:["fine"],a:"Waterloo",p:"$$$"},
   {n:"Cobble Hill Restaurant",c:"Fine Dining / American",t:["fine","american"],a:"Waterloo",p:"$$$"},
+  {n:"Ari'z Supperclub & Martini Lounge",c:"Supper Club / Martini Bar",t:["fine","bar"],a:"Best Western Plus, Waterloo",p:"$$$"},
 
   // ══════════ ITALIAN ══════════
   {n:"The Brown Bottle (Cedar Falls)",c:"Italian-American (since 1972)",t:["fine","american"],a:"1111 Center St, Cedar Falls",p:"$$"},
@@ -221,6 +222,11 @@ const FALLBACK_RESTAURANTS = [
   {n:"Red Lobster",c:"Seafood Chain",t:["american"],a:"Waterloo",p:"$$"},
   {n:"GreenHouse Kitchen",c:"Healthy / Clean Eating",t:["american","breakfast"],a:"Cedar Falls",p:"$$"},
   {n:"Medo's",c:"American / Mediterranean",t:["american"],a:"Waterloo",p:"$$"},
+  {n:"Becker's on the Avenue",c:"American / Bar & Grill",t:["bar","american"],a:"Cedar Falls",p:"$$"},
+  {n:"Doughy's",c:"American / Comfort Food",t:["american"],a:"Waterloo",p:"$"},
+  {n:"The Brass Tap",c:"Craft Beer / Gastropub",t:["bar","american"],a:"421 Main St, Cedar Falls",p:"$$"},
+  {n:"Hy-Vee Market Grille",c:"American / Breakfast / Full Bar",t:["american","breakfast"],a:"Cedar Falls",p:"$$"},
+  {n:"Pick Up N Go Soul Food",c:"Soul Food",t:["american"],a:"Waterloo",p:"$"},
 
   // ══════════ BURGERS ══════════
   {n:"King Bucks",c:"Gourmet Burgers / Drive-Thru",t:["burger"],a:"Cedar Falls",p:"$$"},
@@ -250,6 +256,11 @@ const FALLBACK_RESTAURANTS = [
   {n:"Rancho Chico",c:"Mexican",t:["mexican"],a:"Cedar Falls",p:"$$"},
   {n:"La Placita Mexican Store",c:"Mexican Market / Food",t:["mexican"],a:"Waterloo",p:"$"},
   {n:"Tacos el Pariente",c:"Authentic Mexican Tacos",t:["mexican"],a:"Cedar Falls",p:"$"},
+  {n:"Mezcalitos",c:"Authentic Mexican (est. 2025)",t:["mexican"],a:"Cedar Falls",p:"$$"},
+  {n:"Zury's Taco Bar",c:"Mexican / Flame-Grilled / Seafood",t:["mexican"],a:"2214 College St, Cedar Falls",p:"$$"},
+  {n:"Amigos Mexican Cuisine & Cantina",c:"Mexican",t:["mexican"],a:"Cedar Falls",p:"$$"},
+  {n:"Los Reyes / Taqueria Los Reyes",c:"Authentic Mexican (4.7 rated)",t:["mexican"],a:"403 Franklin St, Waterloo",p:"$"},
+  {n:"Tortas y Tacos DelValle",c:"Mexican / Tortas & Tacos",t:["mexican"],a:"602 Broadway St, Waterloo",p:"$"},
   {n:"Cancun Mexican Bar & Grill",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$$"},
   {n:"Mi Mexico",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
   {n:"Casa De Oro",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
@@ -273,6 +284,7 @@ const FALLBACK_RESTAURANTS = [
   {n:"Mirch Masala Grill",c:"Indian",t:["asian"],a:"Cedar Falls",p:"$$"},
   {n:"Gyro Hut",c:"Mediterranean / Gyros",t:["asian","american"],a:"1104 Washington St, Waterloo",p:"$"},
   {n:"Pho & Grill",c:"Vietnamese / Pho",t:["asian"],a:"Waterloo",p:"$"},
+  {n:"Hibachi Sushi Buffet",c:"Chinese / Sushi / Hibachi Buffet",t:["asian"],a:"Waterloo",p:"$$"},
 
   // ══════════ PIZZA ══════════
   {n:"Basal Pizza",c:"Neapolitan & Detroit-Style Pizza",t:["pizza"],a:"Waterloo",p:"$$"},
@@ -301,12 +313,16 @@ const FALLBACK_RESTAURANTS = [
   {n:"Perkins Restaurant & Bakery",c:"Breakfast / American",t:["breakfast"],a:"Waterloo",p:"$$"},
   {n:"Village Inn",c:"Breakfast / Pie",t:["breakfast"],a:"Cedar Falls",p:"$"},
   {n:"Cedar Falls Family Restaurant",c:"Family Diner / Breakfast",t:["breakfast","american"],a:"Cedar Falls",p:"$"},
+  {n:"Mike's Diner",c:"24-Hour Diner",t:["breakfast","american"],a:"University Ave, Waterloo",p:"$"},
 
   // ══════════ COFFEE / BAKERY / DESSERTS ══════════
   {n:"Cup of Joe",c:"Fair-Trade Coffee / Pastries",t:["coffee"],a:"102 Main St, Cedar Falls",p:"$"},
   {n:"Lincoln Perk",c:"Coffee / Breakfast",t:["coffee","breakfast"],a:"Cedar Falls",p:"$"},
   {n:"Scratch Cupcakery",c:"Cupcakes / Bakery (125+ flavors)",t:["coffee"],a:"Cedar Falls & Waterloo",p:"$"},
-  {n:"Tata Yaya Cafe",c:"Crepes / Coffee",t:["coffee","breakfast"],a:"Cedar Falls",p:"$$"},
+  {n:"Panache Tea Room",c:"High Tea / Sandwiches",t:["coffee","breakfast"],a:"Waterloo",p:"$$"},
+  {n:"Crumbl Cookies (Cedar Falls)",c:"Gourmet Cookies",t:["coffee"],a:"421 Viking Plaza Dr, Cedar Falls",p:"$"},
+  {n:"Crumbl Cookies (Waterloo)",c:"Gourmet Cookies",t:["coffee"],a:"1503 Flammang Dr, Waterloo",p:"$"},
+  {n:"Nothing Bundt Cakes",c:"Bundt Cakes / Bakery",t:["coffee"],a:"Waterloo",p:"$$"},
   {n:"Starbucks",c:"Coffee Chain",t:["coffee"],a:"Cedar Falls / Waterloo",p:"$"},
   {n:"Panera Bread",c:"Bakery-Cafe / Sandwiches",t:["coffee","fast"],a:"Cedar Falls & Waterloo",p:"$$"},
   {n:"Bambino's",c:"Custom Cakes / Bakery",t:["coffee"],a:"Waterloo",p:"$$"},
@@ -335,6 +351,7 @@ const FALLBACK_RESTAURANTS = [
   {n:"Pepper Jax Grill",c:"Cheesesteaks / Fast Casual",t:["fast"],a:"Waterloo",p:"$"},
   {n:"Sub City",c:"Subs / Sandwiches",t:["fast"],a:"Waterloo",p:"$"},
   {n:"Eddie B's Chicken & Fish",c:"Fried Chicken & Fish",t:["fast"],a:"Waterloo",p:"$"},
+  {n:"Maid-Rite",c:"Loose Meat Sandwiches (Iowa Classic)",t:["fast","american"],a:"Cedar Falls area",p:"$"},
 
   // ══════════ FOOD TRUCKS ══════════
   {n:"Hungry Charlie's",c:"Sandwiches / American (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
