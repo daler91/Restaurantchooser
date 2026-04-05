@@ -52,18 +52,14 @@
         #pick-btn:active { transform: scale(0.97); }
         #pick-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         #result {
-            margin-top: 2rem; min-height: 160px;
+            margin-top: 2rem; min-height: 200px;
             display: flex; align-items: center; justify-content: center;
+            perspective: 800px;
         }
         .card {
             background: rgba(255,255,255,0.08);
             backdrop-filter: blur(10px);
             border-radius: 16px; padding: 1.5rem 2rem; width: 100%;
-            animation: popIn 0.35s ease;
-        }
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
         }
         .card h2 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #e94560; }
         .card .cuisine { font-size: 1rem; color: #ccc; margin-bottom: 0.3rem; }
@@ -75,12 +71,60 @@
             display: inline-block; margin-top: 0.8rem;
             color: #e94560; text-decoration: none; border-bottom: 1px solid #e94560;
         }
-        .spinning-name { animation: slotSpin 0.15s linear; }
-        @keyframes slotSpin {
-            0% { opacity: 0; transform: translateY(-20px); }
-            50% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(20px); }
+
+        /* Spin reel */
+        .spin-card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 2rem; width: 100%;
+            overflow: hidden; position: relative;
+            border: 2px solid rgba(233, 69, 96, 0.3);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.15);
         }
+        .spin-card .reel-name {
+            font-size: 1.8rem; font-weight: bold; color: #fff;
+            transition: none;
+        }
+        .spin-card.slowing .reel-name {
+            color: #e94560;
+        }
+
+        /* Winner reveal */
+        .winner-card {
+            animation: winnerReveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid #e94560;
+            box-shadow: 0 0 40px rgba(233, 69, 96, 0.4), 0 0 80px rgba(233, 69, 96, 0.15);
+        }
+        @keyframes winnerReveal {
+            0% { opacity: 0; transform: scale(0.3) rotateX(40deg); }
+            50% { opacity: 1; transform: scale(1.08) rotateX(-5deg); }
+            70% { transform: scale(0.96) rotateX(2deg); }
+            100% { transform: scale(1) rotateX(0deg); }
+        }
+        .winner-card h2 {
+            animation: glowPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%, 100% { text-shadow: 0 0 10px rgba(233, 69, 96, 0.5); }
+            50% { text-shadow: 0 0 25px rgba(233, 69, 96, 0.9), 0 0 50px rgba(233, 69, 96, 0.4); }
+        }
+
+        /* Confetti canvas */
+        #confetti-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 999;
+        }
+
+        /* Button pulse while spinning */
+        #pick-btn.spinning {
+            animation: btnPulse 0.5s ease-in-out infinite alternate;
+            background: linear-gradient(135deg, #e94560, #c62a45);
+        }
+        @keyframes btnPulse {
+            0% { box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4); }
+            100% { box-shadow: 0 4px 35px rgba(233, 69, 96, 0.8); }
+        }
+
         .restaurant-count {
             font-size: 0.8rem; color: #555; margin-bottom: 1rem;
         }
@@ -333,7 +377,68 @@ function loadGoogleMapsScript() {
     });
 }
 
-// Pick button
+// ── Confetti system ──
+function launchConfetti() {
+    const canvas = document.createElement("canvas");
+    canvas.id = "confetti-canvas";
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = ["#e94560", "#f5c518", "#00d2ff", "#ff6b6b", "#48dbfb", "#ff9ff3", "#feca57"];
+    const particles = [];
+
+    for (let i = 0; i < 120; i++) {
+        particles.push({
+            x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+            y: canvas.height / 2,
+            vx: (Math.random() - 0.5) * 18,
+            vy: Math.random() * -18 - 4,
+            size: Math.random() * 8 + 3,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rotation: Math.random() * 360,
+            rotSpeed: (Math.random() - 0.5) * 15,
+            gravity: 0.3 + Math.random() * 0.2,
+            life: 1,
+            decay: 0.008 + Math.random() * 0.008,
+            shape: Math.random() > 0.5 ? "rect" : "circle",
+        });
+    }
+
+    function drawFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        for (const p of particles) {
+            if (p.life <= 0) continue;
+            alive = true;
+            p.x += p.vx;
+            p.vy += p.gravity;
+            p.y += p.vy;
+            p.vx *= 0.98;
+            p.rotation += p.rotSpeed;
+            p.life -= p.decay;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            if (p.shape === "rect") {
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        if (alive) requestAnimationFrame(drawFrame);
+        else canvas.remove();
+    }
+    requestAnimationFrame(drawFrame);
+}
+
+// ── Picker animation ──
 pickBtn.addEventListener("click", () => {
     const pool = getFiltered();
     if (pool.length === 0) {
@@ -342,19 +447,78 @@ pickBtn.addEventListener("click", () => {
     }
 
     pickBtn.disabled = true;
-    let spins = 0;
-    const totalSpins = 12;
-    const interval = setInterval(() => {
-        const r = pickRandom(pool);
-        result.innerHTML = `<div class="card"><h2 class="spinning-name">${r.name}</h2></div>`;
-        spins++;
-        if (spins >= totalSpins) {
-            clearInterval(interval);
-            const winner = pickRandom(pool);
-            result.innerHTML = renderCard(winner);
-            pickBtn.disabled = false;
+    pickBtn.classList.add("spinning");
+
+    const winner = pickRandom(pool);
+
+    // Phase 1: Fast spin (names flying by)
+    // Phase 2: Decelerate (slowing down)
+    // Phase 3: Lock on winner with reveal
+
+    const totalTicks = 30;
+    let tick = 0;
+
+    // Show the reel container
+    result.innerHTML = `<div class="spin-card"><div class="reel-name">&nbsp;</div></div>`;
+    const spinCard = result.querySelector(".spin-card");
+    const reelName = result.querySelector(".reel-name");
+
+    function easeOutExpo(t) {
+        return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+
+    function runTick() {
+        tick++;
+        const progress = tick / totalTicks;
+
+        // Interval gets longer as we slow down: 40ms → 300ms
+        const delay = 40 + easeOutExpo(progress) * 260;
+
+        if (tick < totalTicks - 3) {
+            // Fast/medium spin — random names
+            const r = pickRandom(pool);
+            reelName.textContent = r.name;
+            reelName.style.transform = `translateY(0)`;
+            reelName.style.opacity = 1;
+
+            // Blur effect during fast spin
+            const blur = Math.max(0, 3 - progress * 4);
+            reelName.style.filter = `blur(${blur}px)`;
+        } else if (tick < totalTicks) {
+            // Last 3 ticks — slowing, teasing near-winner names
+            spinCard.classList.add("slowing");
+            reelName.style.filter = "blur(0)";
+            // Show nearby restaurants (not the winner yet)
+            const nearMiss = pool.filter(r => r !== winner);
+            const r = nearMiss.length > 0 ? pickRandom(nearMiss) : pickRandom(pool);
+            reelName.textContent = r.name;
         }
-    }, 100);
+
+        if (tick < totalTicks) {
+            setTimeout(runTick, delay);
+        } else {
+            // Final reveal!
+            setTimeout(() => {
+                pickBtn.classList.remove("spinning");
+                const mapsUrl = winner.placeId
+                    ? `https://www.google.com/maps/place/?q=place_id:${winner.placeId}`
+                    : `https://www.google.com/maps/search/${winner.map}`;
+                result.innerHTML = `<div class="card winner-card">
+                    <h2>${winner.name}</h2>
+                    <div class="cuisine">${winner.cuisine}</div>
+                    <div class="location">${winner.address}</div>
+                    <div class="rating">${starsFor(winner.rating)}</div>
+                    <div class="price">${winner.price}</div>
+                    <div class="total-ratings">${winner.totalRatings} reviews</div>
+                    <a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a>
+                </div>`;
+                launchConfetti();
+                pickBtn.disabled = false;
+            }, 400);
+        }
+    }
+
+    runTick();
 });
 </script>
 </body>
