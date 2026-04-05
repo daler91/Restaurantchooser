@@ -1,741 +1,1209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Picker - Waterloo / Cedar Falls</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-        }
-        .container {
-            text-align: center;
-            max-width: 600px;
-            width: 90%;
-        }
-        h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-        .subtitle { color: #aaa; margin-bottom: 0.3rem; font-size: 1.1rem; }
-        .source-note {
-            color: #666; font-size: 0.8rem; margin-bottom: 1.5rem; font-style: italic;
-        }
-        .filters {
-            display: flex; flex-wrap: wrap; gap: 0.5rem;
-            justify-content: center; margin-bottom: 1.5rem;
-        }
-        .filter-btn {
-            padding: 0.4rem 1rem;
-            border: 2px solid #e94560;
-            background: transparent;
-            color: #e94560;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-        .filter-btn.active, .filter-btn:hover {
-            background: #e94560; color: #fff;
-        }
-        #pick-btn {
-            padding: 1rem 3rem; font-size: 1.4rem; border: none; border-radius: 12px;
-            background: #e94560; color: #fff; cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
-        }
-        #pick-btn:hover { transform: scale(1.05); }
-        #pick-btn:active { transform: scale(0.97); }
-        #pick-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        #result {
-            margin-top: 2rem; min-height: 200px;
-            display: flex; align-items: center; justify-content: center;
-            perspective: 800px;
-        }
-        .card {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(10px);
-            border-radius: 16px; padding: 1.5rem 2rem; width: 100%;
-        }
-        .card h2 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #e94560; }
-        .card .cuisine { font-size: 1rem; color: #ccc; margin-bottom: 0.3rem; }
-        .card .location { font-size: 0.9rem; color: #999; margin-bottom: 0.4rem; }
-        .card .rating { font-size: 0.95rem; color: #f5c518; margin-bottom: 0.3rem; }
-        .card .price { font-size: 1rem; margin-bottom: 0.3rem; }
-        .card .total-ratings { font-size: 0.8rem; color: #777; }
-        .card a {
-            display: inline-block; margin-top: 0.8rem;
-            color: #e94560; text-decoration: none; border-bottom: 1px solid #e94560;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Restaurant Chooser - Waterloo / Cedar Falls</title>
+<script>
+  // Apply theme before first paint to avoid flash
+  (function() {
+    try {
+      var t = localStorage.getItem('rc_theme') || 'dark';
+      if (t === 'light') document.documentElement.classList.add('light-theme');
+    } catch (e) {}
+  })();
+</script>
+<style>
+:root {
+  --bg-1: #1a1a2e;
+  --bg-2: #16213e;
+  --bg-3: #0f3460;
+  --text: #ffffff;
+  --text-dim: #aaaaaa;
+  --text-faint: #777777;
+  --card-bg: rgba(255,255,255,0.08);
+  --card-border: rgba(255,255,255,0.12);
+  --accent: #e94560;
+  --accent-dark: #c62a45;
+  --gold: #f5c518;
+  --nav-bg: rgba(15, 15, 30, 0.92);
+}
+html.light-theme {
+  --bg-1: #f5f5f7;
+  --bg-2: #e8e8f0;
+  --bg-3: #dcdce8;
+  --text: #1a1a2e;
+  --text-dim: #555;
+  --text-faint: #888;
+  --card-bg: rgba(255,255,255,0.85);
+  --card-border: rgba(0,0,0,0.08);
+  --nav-bg: rgba(255, 255, 255, 0.94);
+}
 
-        /* Spin reel */
-        .spin-card {
-            background: rgba(255,255,255,0.06);
-            backdrop-filter: blur(10px);
-            border-radius: 16px; padding: 2rem; width: 100%;
-            overflow: hidden; position: relative;
-            border: 2px solid rgba(233, 69, 96, 0.3);
-            box-shadow: 0 0 30px rgba(233, 69, 96, 0.15);
-        }
-        .spin-card .reel-name {
-            font-size: 1.8rem; font-weight: bold; color: #fff;
-            transition: none;
-        }
-        .spin-card.slowing .reel-name {
-            color: #e94560;
-        }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+  color: var(--text);
+  padding-bottom: 80px;
+  min-height: 100vh;
+}
 
-        /* Winner reveal */
-        .winner-card {
-            animation: winnerReveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 2px solid #e94560;
-            box-shadow: 0 0 40px rgba(233, 69, 96, 0.4), 0 0 80px rgba(233, 69, 96, 0.15);
-        }
-        @keyframes winnerReveal {
-            0% { opacity: 0; transform: scale(0.3) rotateX(40deg); }
-            50% { opacity: 1; transform: scale(1.08) rotateX(-5deg); }
-            70% { transform: scale(0.96) rotateX(2deg); }
-            100% { transform: scale(1) rotateX(0deg); }
-        }
-        .winner-card h2 {
-            animation: glowPulse 1.5s ease-in-out infinite;
-        }
-        @keyframes glowPulse {
-            0%, 100% { text-shadow: 0 0 10px rgba(233, 69, 96, 0.5); }
-            50% { text-shadow: 0 0 25px rgba(233, 69, 96, 0.9), 0 0 50px rgba(233, 69, 96, 0.4); }
-        }
+header.app-header {
+  position: sticky; top: 0; z-index: 50;
+  padding: 0.9rem 1rem;
+  backdrop-filter: blur(12px);
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--card-border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { font-size: 1.2rem; }
+header .subtitle { font-size: 0.75rem; color: var(--text-dim); }
+.theme-toggle {
+  background: transparent; border: 1px solid var(--card-border);
+  color: var(--text); width: 40px; height: 40px; border-radius: 50%;
+  font-size: 1.2rem; cursor: pointer; transition: all 0.2s;
+}
+.theme-toggle:hover { background: var(--card-bg); }
 
-        /* Confetti canvas */
-        #confetti-canvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 999;
-        }
+main { max-width: 720px; margin: 0 auto; padding: 1rem; }
+.tab-section { display: none; }
+.tab-section.active { display: block; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-        /* Button pulse while spinning */
-        #pick-btn.spinning {
-            animation: btnPulse 0.5s ease-in-out infinite alternate;
-            background: linear-gradient(135deg, #e94560, #c62a45);
-        }
-        @keyframes btnPulse {
-            0% { box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4); }
-            100% { box-shadow: 0 4px 35px rgba(233, 69, 96, 0.8); }
-        }
+.section-title { font-size: 1.1rem; margin: 1.2rem 0 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
 
-        .restaurant-count {
-            font-size: 0.8rem; color: #555; margin-bottom: 1rem;
-        }
-    </style>
+/* Filters */
+.filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+.filter-btn {
+  padding: 0.4rem 0.9rem;
+  border: 2px solid var(--accent);
+  background: transparent; color: var(--accent);
+  border-radius: 20px; cursor: pointer;
+  font-size: 0.85rem; transition: all 0.2s;
+}
+.filter-btn.active, .filter-btn:hover { background: var(--accent); color: #fff; }
+.price-filters .filter-btn { min-width: 50px; }
+.search-input {
+  width: 100%; padding: 0.7rem 1rem; border-radius: 10px;
+  border: 1px solid var(--card-border); background: var(--card-bg);
+  color: var(--text); font-size: 0.95rem; margin-bottom: 0.8rem;
+}
+.toggle-row { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.8rem; font-size: 0.85rem; color: var(--text-dim); }
+.toggle-row label { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+
+/* Pick button */
+#pick-btn {
+  display: block; width: 100%; max-width: 360px; margin: 0.6rem auto;
+  padding: 1rem 2rem; font-size: 1.3rem; border: none; border-radius: 12px;
+  background: var(--accent); color: #fff; cursor: pointer; font-weight: 600;
+  box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#pick-btn:hover { transform: scale(1.03); }
+#pick-btn:active { transform: scale(0.97); }
+#pick-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+#pick-btn.spinning {
+  animation: btnPulse 0.5s ease-in-out infinite alternate;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+}
+@keyframes btnPulse {
+  0% { box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4); }
+  100% { box-shadow: 0 4px 35px rgba(233, 69, 96, 0.8); }
+}
+.secondary-btn {
+  display: inline-block; padding: 0.55rem 1rem; margin: 0.3rem;
+  background: transparent; border: 1px solid var(--accent); color: var(--accent);
+  border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+}
+.secondary-btn:hover { background: var(--accent); color: #fff; }
+
+/* Restaurant cards */
+#result { margin-top: 1.2rem; min-height: 180px; display: flex; align-items: center; justify-content: center; perspective: 800px; }
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--card-border);
+  border-radius: 16px; padding: 1.3rem 1.5rem;
+  width: 100%; position: relative;
+}
+.card h2 { font-size: 1.4rem; margin-bottom: 0.35rem; color: var(--accent); padding-right: 2.2rem; }
+.card .cuisine { font-size: 0.95rem; color: var(--text-dim); margin-bottom: 0.25rem; }
+.card .location { font-size: 0.85rem; color: var(--text-faint); margin-bottom: 0.35rem; }
+.card .rating { font-size: 0.9rem; color: var(--gold); margin-bottom: 0.25rem; }
+.card .price { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
+.card a.maps-link {
+  display: inline-block; margin-top: 0.7rem;
+  color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent);
+  font-size: 0.9rem;
+}
+.badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.4rem 0; }
+.badge {
+  font-size: 0.7rem; padding: 0.15rem 0.55rem; border-radius: 10px;
+  background: rgba(233, 69, 96, 0.15); color: var(--accent);
+  border: 1px solid rgba(233, 69, 96, 0.3);
+}
+.fav-heart {
+  position: absolute; top: 1rem; right: 1rem;
+  background: transparent; border: none; font-size: 1.5rem;
+  cursor: pointer; color: var(--text-faint); transition: all 0.2s;
+}
+.fav-heart.faved { color: var(--accent); transform: scale(1.15); }
+.fav-heart:hover { transform: scale(1.2); }
+
+.spin-card {
+  background: var(--card-bg); backdrop-filter: blur(10px);
+  border-radius: 16px; padding: 2rem; width: 100%;
+  overflow: hidden; position: relative;
+  border: 2px solid rgba(233, 69, 96, 0.3);
+  box-shadow: 0 0 30px rgba(233, 69, 96, 0.15);
+}
+.spin-card .reel-name { font-size: 1.6rem; font-weight: bold; color: var(--text); text-align: center; }
+.spin-card.slowing .reel-name { color: var(--accent); }
+
+.winner-card {
+  animation: winnerReveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 40px rgba(233, 69, 96, 0.4), 0 0 80px rgba(233, 69, 96, 0.15);
+}
+@keyframes winnerReveal {
+  0% { opacity: 0; transform: scale(0.3) rotateX(40deg); }
+  50% { opacity: 1; transform: scale(1.08) rotateX(-5deg); }
+  70% { transform: scale(0.96) rotateX(2deg); }
+  100% { transform: scale(1) rotateX(0deg); }
+}
+.winner-card h2 { animation: glowPulse 1.5s ease-in-out infinite; }
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 10px rgba(233, 69, 96, 0.5); }
+  50% { text-shadow: 0 0 25px rgba(233, 69, 96, 0.9), 0 0 50px rgba(233, 69, 96, 0.4); }
+}
+
+#confetti-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 999;
+}
+
+/* Grid for browse */
+.card-grid { display: grid; grid-template-columns: 1fr; gap: 0.8rem; }
+@media (min-width: 560px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+.mini-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 0.9rem 1rem; cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s; position: relative;
+}
+.mini-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+.mini-card .emoji { font-size: 1.5rem; margin-right: 0.4rem; }
+.mini-card h3 { font-size: 1rem; margin-bottom: 0.2rem; padding-right: 2rem; }
+.mini-card .cuisine { font-size: 0.8rem; color: var(--text-dim); }
+.mini-card .meta { font-size: 0.75rem; color: var(--text-faint); margin-top: 0.25rem; }
+
+/* Battle mode */
+.battle-grid { display: grid; grid-template-columns: 1fr; gap: 0.7rem; margin-top: 1rem; }
+@media (min-width: 500px) { .battle-grid { grid-template-columns: 1fr 1fr; } }
+.battle-card {
+  padding: 1rem; background: var(--card-bg); border: 2px solid var(--card-border);
+  border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.battle-card:hover { border-color: var(--accent); transform: scale(1.02); }
+.battle-card.eliminated { opacity: 0.3; transform: scale(0.9); pointer-events: none; }
+
+/* Stats charts */
+.chart-row { display: flex; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem; }
+.chart-label { min-width: 100px; font-size: 0.85rem; color: var(--text-dim); }
+.chart-bar-wrap { flex: 1; background: var(--card-border); border-radius: 4px; height: 18px; overflow: hidden; }
+.chart-bar { height: 100%; background: linear-gradient(90deg, var(--accent), #ff6b6b); border-radius: 4px; transition: width 0.5s; }
+.chart-count { font-size: 0.8rem; color: var(--text-faint); min-width: 30px; text-align: right; }
+.stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; }
+.stat-box h4 { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.4rem; text-transform: uppercase; }
+.stat-box .big-num { font-size: 1.8rem; color: var(--accent); font-weight: 700; }
+
+/* Admin */
+.admin-lock { text-align: center; padding: 2rem 1rem; }
+.admin-lock input {
+  padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--card-border);
+  background: var(--card-bg); color: var(--text); font-size: 1.1rem; text-align: center;
+  letter-spacing: 0.3em; width: 180px; margin: 0 0.4rem;
+}
+.admin-section { margin-bottom: 1.5rem; }
+.admin-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 0.9rem; background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 10px; margin-bottom: 0.5rem; gap: 0.5rem; flex-wrap: wrap;
+}
+.admin-row .info { flex: 1; min-width: 200px; }
+.admin-row .info strong { display: block; margin-bottom: 0.2rem; }
+.admin-row .info small { color: var(--text-dim); font-size: 0.8rem; }
+.admin-row .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.btn-approve { background: #2ecc71; color: #fff; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+.btn-reject, .btn-delete { background: #e74c3c; color: #fff; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+.btn-edit { background: #3498db; color: #fff; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+
+/* Modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg-2); border: 1px solid var(--card-border);
+  border-radius: 16px; padding: 1.5rem; max-width: 500px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal h3 { margin-bottom: 1rem; color: var(--accent); }
+.modal label { display: block; font-size: 0.85rem; color: var(--text-dim); margin: 0.7rem 0 0.25rem; }
+.modal input, .modal textarea, .modal select {
+  width: 100%; padding: 0.6rem 0.8rem; border-radius: 8px;
+  border: 1px solid var(--card-border); background: var(--card-bg);
+  color: var(--text); font-size: 0.95rem; font-family: inherit;
+}
+.modal textarea { min-height: 70px; resize: vertical; }
+.modal .tag-checks { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.modal .tag-checks label { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--card-bg); padding: 0.3rem 0.6rem; border-radius: 16px; font-size: 0.8rem; cursor: pointer; }
+.modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.2rem; }
+.modal-actions button { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; }
+.modal-actions .cancel { background: transparent; color: var(--text-dim); border: 1px solid var(--card-border); }
+.modal-actions .submit { background: var(--accent); color: #fff; }
+
+/* Bottom tab nav */
+nav.tab-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--nav-bg); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--card-border);
+  display: flex; justify-content: space-around; padding: 0.4rem 0; z-index: 50;
+  padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0));
+}
+nav.tab-nav button {
+  flex: 1; background: transparent; border: none; color: var(--text-dim);
+  padding: 0.5rem 0.2rem; cursor: pointer; font-size: 0.7rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  min-height: 54px; transition: color 0.2s;
+}
+nav.tab-nav button .icon { font-size: 1.4rem; }
+nav.tab-nav button.active { color: var(--accent); }
+nav.tab-nav button.hidden { display: none; }
+
+/* Toast */
+#toast-container { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; pointer-events: none; }
+.toast {
+  background: rgba(20,20,40,0.95); color: #fff; padding: 0.7rem 1.1rem;
+  border-radius: 10px; border: 1px solid var(--accent);
+  font-size: 0.9rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  animation: toastIn 0.3s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-dim); }
+.empty-state .icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+.status-line { font-size: 0.8rem; color: var(--text-faint); text-align: center; margin: 0.5rem 0; }
+</style>
 </head>
 <body>
-<div class="container">
-    <h1>Where should we eat?</h1>
-    <p class="subtitle">Waterloo &amp; Cedar Falls, Iowa</p>
-    <p class="source-note" id="source-note">Sourced from the WCF Area Foodies group &amp; local picks</p>
 
-    <div class="filters">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="fine">Fine Dining</button>
-        <button class="filter-btn" data-filter="american">American</button>
-        <button class="filter-btn" data-filter="mexican">Mexican</button>
-        <button class="filter-btn" data-filter="asian">Asian</button>
-        <button class="filter-btn" data-filter="bbq">BBQ</button>
-        <button class="filter-btn" data-filter="pizza">Pizza</button>
-        <button class="filter-btn" data-filter="breakfast">Breakfast</button>
-        <button class="filter-btn" data-filter="burger">Burgers</button>
-        <button class="filter-btn" data-filter="bar">Bar & Grill</button>
-        <button class="filter-btn" data-filter="fast">Fast Food</button>
-        <button class="filter-btn" data-filter="coffee">Coffee & Bakery</button>
-        <button class="filter-btn" data-filter="truck">Food Trucks</button>
+<header class="app-header">
+  <div>
+    <h1>Where should we eat?</h1>
+    <div class="subtitle">Waterloo &amp; Cedar Falls, IA</div>
+  </div>
+  <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+</header>
+
+<main>
+  <!-- ══════════ PICK TAB ══════════ -->
+  <section id="tab-pick" class="tab-section active">
+    <div class="status-line" id="status-line">Loading restaurants…</div>
+
+    <div class="filters" id="category-filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="fine">Fine Dining</button>
+      <button class="filter-btn" data-filter="american">American</button>
+      <button class="filter-btn" data-filter="mexican">Mexican</button>
+      <button class="filter-btn" data-filter="asian">Asian</button>
+      <button class="filter-btn" data-filter="bbq">BBQ</button>
+      <button class="filter-btn" data-filter="pizza">Pizza</button>
+      <button class="filter-btn" data-filter="breakfast">Breakfast</button>
+      <button class="filter-btn" data-filter="burger">Burgers</button>
+      <button class="filter-btn" data-filter="bar">Bar &amp; Grill</button>
+      <button class="filter-btn" data-filter="fast">Fast Food</button>
+      <button class="filter-btn" data-filter="coffee">Coffee &amp; Bakery</button>
+      <button class="filter-btn" data-filter="truck">Food Trucks</button>
     </div>
 
-    <div class="restaurant-count" id="restaurant-count"></div>
+    <div class="filters price-filters" id="price-filters">
+      <button class="filter-btn" data-price="$">$</button>
+      <button class="filter-btn" data-price="$$">$$</button>
+      <button class="filter-btn" data-price="$$$">$$$</button>
+      <button class="filter-btn" data-price="$$$$">$$$$</button>
+    </div>
 
-    <button id="pick-btn" disabled>Loading restaurants...</button>
+    <input type="text" id="search-input" class="search-input" placeholder="🔍 Search by name, cuisine, or area…">
+
+    <div class="toggle-row">
+      <label><input type="checkbox" id="toggle-fav-only"> Favorites only</label>
+      <label><input type="checkbox" id="toggle-exclude-recent"> Exclude last 5 picks</label>
+    </div>
+
+    <button id="pick-btn" disabled>Loading…</button>
+
+    <div style="text-align:center;">
+      <button class="secondary-btn" id="battle-btn">⚔️ Battle Mode (3 picks)</button>
+    </div>
 
     <div id="result"></div>
+    <div id="battle-area"></div>
+
+    <div id="recent-picks-section" style="display:none;">
+      <h3 class="section-title">Recent Picks</h3>
+      <div id="recent-picks"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ BROWSE TAB ══════════ -->
+  <section id="tab-browse" class="tab-section">
+    <h2 class="section-title">Browse All Restaurants</h2>
+    <input type="text" id="browse-search" class="search-input" placeholder="🔍 Search…">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+      <select id="browse-sort" class="search-input" style="flex:1; min-width:120px;">
+        <option value="name">Sort: Name</option>
+        <option value="cuisine">Sort: Cuisine</option>
+        <option value="price">Sort: Price</option>
+      </select>
+      <button class="secondary-btn" id="suggest-btn">➕ Suggest</button>
+    </div>
+    <div class="card-grid" id="browse-grid"></div>
+    <div style="text-align:center; margin: 1rem 0;">
+      <button class="secondary-btn" id="load-more-btn" style="display:none;">Load More</button>
+    </div>
+  </section>
+
+  <!-- ══════════ FAVORITES TAB ══════════ -->
+  <section id="tab-favorites" class="tab-section">
+    <h2 class="section-title">Your Favorites ❤️</h2>
+    <div class="card-grid" id="favorites-grid"></div>
+    <div id="favorites-empty" class="empty-state" style="display:none;">
+      <div class="icon">💔</div>
+      <div>No favorites yet.</div>
+      <div style="font-size:0.85rem; margin-top:0.4rem;">Tap the heart on any restaurant to save it here.</div>
+    </div>
+  </section>
+
+  <!-- ══════════ STATS TAB ══════════ -->
+  <section id="tab-stats" class="tab-section">
+    <h2 class="section-title">Your Stats</h2>
+    <div id="stats-content"></div>
+  </section>
+
+  <!-- ══════════ ADMIN TAB ══════════ -->
+  <section id="tab-admin" class="tab-section">
+    <div id="admin-lock" class="admin-lock">
+      <h2 class="section-title">Admin Access</h2>
+      <p style="color: var(--text-dim); margin-bottom: 1rem;">Enter PIN to unlock restaurant management.</p>
+      <input type="password" id="admin-pin-input" placeholder="••••" inputmode="numeric">
+      <button class="secondary-btn" id="admin-unlock-btn">Unlock</button>
+    </div>
+    <div id="admin-panel" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h2 class="section-title" style="margin:0;">Admin Panel</h2>
+        <button class="secondary-btn" id="admin-logout-btn">Lock</button>
+      </div>
+
+      <div class="admin-section">
+        <h3 class="section-title">Pending Suggestions</h3>
+        <div id="admin-suggestions"></div>
+      </div>
+
+      <div class="admin-section">
+        <h3 class="section-title">Add Restaurant</h3>
+        <button class="secondary-btn" id="admin-add-btn">+ New Restaurant</button>
+      </div>
+
+      <div class="admin-section">
+        <h3 class="section-title">Manage Restaurants</h3>
+        <input type="text" id="admin-search" class="search-input" placeholder="🔍 Filter…">
+        <div id="admin-restaurants"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tab-nav" id="tab-nav">
+  <button class="active" data-tab="pick"><span class="icon">🎰</span><span>Pick</span></button>
+  <button data-tab="browse"><span class="icon">📋</span><span>Browse</span></button>
+  <button data-tab="favorites"><span class="icon">❤️</span><span>Favs</span></button>
+  <button data-tab="stats"><span class="icon">📊</span><span>Stats</span></button>
+  <button data-tab="admin"><span class="icon">🔒</span><span>Admin</span></button>
+</nav>
+
+<!-- Suggest modal -->
+<div class="modal-overlay" id="suggest-modal">
+  <div class="modal">
+    <h3>Suggest a Restaurant</h3>
+    <label>Name *</label><input type="text" id="sg-name">
+    <label>Cuisine *</label><input type="text" id="sg-cuisine" placeholder="e.g. Thai, Italian">
+    <label>Address *</label><input type="text" id="sg-address">
+    <label>Price *</label>
+    <select id="sg-price">
+      <option value="$">$</option><option value="$$" selected>$$</option>
+      <option value="$$$">$$$</option><option value="$$$$">$$$$</option>
+    </select>
+    <label>Categories</label>
+    <div class="tag-checks" id="sg-tags"></div>
+    <label>Your note (optional)</label><textarea id="sg-note" placeholder="Anything we should know?"></textarea>
+    <div class="modal-actions">
+      <button class="cancel" data-close-modal="suggest-modal">Cancel</button>
+      <button class="submit" id="sg-submit">Submit</button>
+    </div>
+  </div>
 </div>
 
+<!-- Restaurant detail modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" id="detail-modal-content"></div>
+</div>
+
+<!-- Admin edit modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3 id="edit-modal-title">Edit Restaurant</h3>
+    <input type="hidden" id="ed-id">
+    <label>Name</label><input type="text" id="ed-name">
+    <label>Cuisine</label><input type="text" id="ed-cuisine">
+    <label>Address</label><input type="text" id="ed-address">
+    <label>Price</label>
+    <select id="ed-price">
+      <option value="$">$</option><option value="$$">$$</option>
+      <option value="$$$">$$$</option><option value="$$$$">$$$$</option>
+    </select>
+    <label>Categories</label>
+    <div class="tag-checks" id="ed-tags"></div>
+    <div class="modal-actions">
+      <button class="cancel" data-close-modal="edit-modal">Cancel</button>
+      <button class="submit" id="ed-submit">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
 <script>
-const SEARCH_QUERIES = [
-    "best restaurants in Waterloo Iowa",
-    "best restaurants in Cedar Falls Iowa",
-    "top rated food Waterloo Cedar Falls Iowa",
+// ──────────── State & Storage ────────────
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+
+const state = {
+  restaurants: [],
+  favorites: LS.get('rc_favorites', []),
+  history: LS.get('rc_history', []),
+  theme: LS.get('rc_theme', 'dark'),
+  adminPin: LS.get('rc_admin_pin', null),
+  activeCategory: 'all',
+  activePrices: new Set(),
+  searchQuery: '',
+  favOnly: LS.get('rc_favoritesOnly', false),
+  excludeRecent: LS.get('rc_excludeRecent', false),
+  browsePage: 0,
+  browseSort: 'name',
+  browseSearch: '',
+};
+
+const CATEGORIES = [
+  { key: 'fine', label: 'Fine Dining', emoji: '🍷' },
+  { key: 'american', label: 'American', emoji: '🇺🇸' },
+  { key: 'mexican', label: 'Mexican', emoji: '🌮' },
+  { key: 'asian', label: 'Asian', emoji: '🥢' },
+  { key: 'bbq', label: 'BBQ', emoji: '🍖' },
+  { key: 'pizza', label: 'Pizza', emoji: '🍕' },
+  { key: 'breakfast', label: 'Breakfast', emoji: '🥞' },
+  { key: 'burger', label: 'Burgers', emoji: '🍔' },
+  { key: 'bar', label: 'Bar & Grill', emoji: '🍺' },
+  { key: 'fast', label: 'Fast Food', emoji: '🍟' },
+  { key: 'coffee', label: 'Coffee & Bakery', emoji: '☕' },
+  { key: 'truck', label: 'Food Trucks', emoji: '🚚' },
 ];
 
-const PRICE_MAP = { 0: "Free", 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
-
-let restaurants = [];
-let activeFilter = "all";
-
-const pickBtn = document.getElementById("pick-btn");
-const result = document.getElementById("result");
-const sourceNote = document.getElementById("source-note");
-const countEl = document.getElementById("restaurant-count");
-
-// EVERY restaurant, food truck & eatery in the Waterloo / Cedar Falls area.
-// Compiled from WCF Area Foodies FB group, KHAK, WCF Courier, Yelp,
-// TripAdvisor, Restaurantji, Cedar Falls Tourism, Experience Waterloo,
-// Main Street Waterloo, EatStreet, DoorDash, Yellow Pages, and Google.
-const FALLBACK_RESTAURANTS = [
-  // ══════════ FINE DINING ══════════
-  {n:"Montage",c:"Creative Fine Dining",t:["fine"],a:"Downtown Cedar Falls",p:"$$$"},
-  {n:"Galleria de Paco",c:"European-American Fine Dining",t:["fine"],a:"622 Commercial St, Waterloo",p:"$$$"},
-  {n:"Iowa PrimeHouse",c:"Farm-to-Fork Steakhouse",t:["fine"],a:"202 S Cherry St, Waterloo",p:"$$$"},
-  {n:"The Stuffed Olive",c:"Seafood / Fine Dining",t:["fine"],a:"620 E 18th St, Cedar Falls",p:"$$$"},
-  {n:"Table 1912",c:"Fine Dining",t:["fine"],a:"Waterloo",p:"$$$"},
-  {n:"Cobble Hill Restaurant",c:"Fine Dining / American",t:["fine","american"],a:"Waterloo",p:"$$$"},
-  {n:"Ari'z Supperclub & Martini Lounge",c:"Supper Club / Martini Bar",t:["fine","bar"],a:"Best Western Plus, Waterloo",p:"$$$"},
-
-  // ══════════ ITALIAN ══════════
-  {n:"The Brown Bottle (Cedar Falls)",c:"Italian-American (since 1972)",t:["fine","american"],a:"1111 Center St, Cedar Falls",p:"$$"},
-  {n:"The Brown Bottle (Waterloo)",c:"Italian-American",t:["american"],a:"Waterloo",p:"$$"},
-  {n:"Olive Garden",c:"Italian Chain",t:["american"],a:"1315 E San Marnan Dr, Waterloo",p:"$$"},
-  {n:"Villa Italian Specialties",c:"Italian Deli",t:["american"],a:"Waterloo",p:"$$"},
-
-  // ══════════ AMERICAN / GASTROPUB ══════════
-  {n:"SingleSpeed Brewing Co",c:"Brewpub / American",t:["bar","american"],a:"325 Commercial St, Waterloo",p:"$$"},
-  {n:"Deringer's Public Parlor",c:"American / Craft Cocktails",t:["bar","american"],a:"Downtown Cedar Falls",p:"$$"},
-  {n:"Second State Brewing Co",c:"Brewpub / American",t:["bar","american"],a:"Cedar Falls",p:"$$"},
-  {n:"George's Local",c:"American / Farm-to-Table",t:["american"],a:"Cedar Falls",p:"$$"},
-  {n:"1850 Patio & Grill",c:"American / Grilled",t:["american","bar"],a:"Waterloo",p:"$$"},
-  {n:"Rodney's Kitchen",c:"American Comfort Food",t:["american"],a:"Waterloo",p:"$$"},
-  {n:"Pump Haus Pub & Grill",c:"American / Bar & Grill",t:["bar","burger","american"],a:"311 Main St, Cedar Falls",p:"$$"},
-  {n:"Whiskey Road Tavern & Grill",c:"American / Bar & Grill",t:["bar","american"],a:"Cedar Falls",p:"$$"},
-  {n:"The Horny Toad American Bar & Grill",c:"American / Bar & Grill",t:["bar","american"],a:"Cedar Falls",p:"$$"},
-  {n:"Peppers Grill & Sports Bar",c:"Burgers / Bar & Grill",t:["burger","bar"],a:"Cedar Falls",p:"$$"},
-  {n:"The Other Place",c:"Pizza / Bar",t:["pizza","bar"],a:"4214 University Ave, Cedar Falls",p:"$$"},
-  {n:"Mulligan's Brick Oven Grill & Pub",c:"American / Pub",t:["bar","american"],a:"Cedar Falls",p:"$$"},
-  {n:"Black Sheep Social Club",c:"Gastropub / American",t:["bar","american"],a:"Waterloo",p:"$$"},
-  {n:"Jameson's Public House",c:"Irish Pub / American",t:["bar","american"],a:"Waterloo",p:"$$"},
-  {n:"Gilmore's Pub",c:"Pub / American",t:["bar","american"],a:"Waterloo",p:"$$"},
-  {n:"Half Pint Saloon",c:"Bar / American",t:["bar","american"],a:"Waterloo",p:"$"},
-  {n:"Kingpin Social",c:"Bar & Grill / Entertainment",t:["bar","american"],a:"University Ave, Waterloo",p:"$$"},
-  {n:"Tipsy'z Bar And Grill",c:"Bar & Grill",t:["bar","american"],a:"Waterloo",p:"$$"},
-  {n:"Screaming Eagle",c:"American",t:["american","bar"],a:"Waterloo",p:"$$"},
-  {n:"Applebee's",c:"American Chain / Bar & Grill",t:["bar","american"],a:"2780 Crossroads Blvd, Waterloo",p:"$$"},
-  {n:"Texas Roadhouse",c:"Steakhouse / American",t:["american"],a:"Cedar Falls",p:"$$"},
-  {n:"Buffalo Wild Wings",c:"Wings / Sports Bar",t:["bar","american"],a:"6406 University Ave, Cedar Falls",p:"$$"},
-  {n:"Red Lobster",c:"Seafood Chain",t:["american"],a:"Waterloo",p:"$$"},
-  {n:"GreenHouse Kitchen",c:"Healthy / Clean Eating",t:["american","breakfast"],a:"Cedar Falls",p:"$$"},
-  {n:"Medo's",c:"American / Mediterranean",t:["american"],a:"Waterloo",p:"$$"},
-  {n:"Becker's on the Avenue",c:"American / Bar & Grill",t:["bar","american"],a:"Cedar Falls",p:"$$"},
-  {n:"Doughy Joey's Peetza Joint",c:"Pizza",t:["pizza","american"],a:"300 W 4th St, Waterloo",p:"$$"},
-  {n:"The Brass Tap",c:"Craft Beer / Gastropub",t:["bar","american"],a:"421 Main St, Cedar Falls",p:"$$"},
-  {n:"Hy-Vee Market Grille",c:"American / Breakfast / Full Bar",t:["american","breakfast"],a:"Cedar Falls",p:"$$"},
-  {n:"Pick Up N Go Soul Food",c:"Soul Food",t:["american"],a:"Waterloo",p:"$"},
-  {n:"LJ's Neighborhood Bar & Grill",c:"American / Pizza",t:["american","bar"],a:"3550 Kimball Ave, Waterloo",p:"$$"},
-  {n:"Locals Bar & Grill",c:"American",t:["bar","american"],a:"229 E 4th St, Waterloo",p:"$$"},
-  {n:"LongHorn Steakhouse",c:"Steakhouse Chain",t:["fine","american"],a:"E San Marnan Dr, Waterloo",p:"$$$"},
-  {n:"Hydrant Firehouse Grill",c:"American",t:["american"],a:"Cedar Falls",p:"$$"},
-  {n:"Cottonwood Canyon",c:"American",t:["american"],a:"419 Washington St, Cedar Falls",p:"$$"},
-  {n:"Wahlburgers",c:"Burgers / Bar & Grill",t:["burger","american"],a:"Cedar Falls",p:"$$"},
-  {n:"Mama Nick's Circle Pizzeria",c:"Pizza / Italian / Burgers",t:["pizza","american"],a:"Waterloo",p:"$$"},
-  {n:"Tuscany Grill",c:"Italian / American (new)",t:["american"],a:"Waterloo",p:"$$"},
-
-  // ══════════ BURGERS ══════════
-  {n:"King Bucks",c:"Gourmet Burgers / Drive-Thru",t:["burger"],a:"Cedar Falls",p:"$$"},
-  {n:"Bigfoot Betty's",c:"Award-Winning Tenderloins / Burgers",t:["burger"],a:"419 Main St, Cedar Falls",p:"$$"},
-  {n:"Southtown Restaurant & Bar",c:"Best Tenderloin / Burgers",t:["burger","american"],a:"Waterloo",p:"$"},
-  {n:"Mac's Drive-In",c:"Classic 50s Drive-In",t:["burger"],a:"Waterloo",p:"$"},
-  {n:"Big Head Burger",c:"Gourmet Burgers",t:["burger"],a:"324 W 4th St, Waterloo",p:"$$"},
-
-  // ══════════ BBQ ══════════
-  {n:"Blue Barn BBQ",c:"Wood-Fired BBQ",t:["bbq"],a:"Cedar Falls",p:"$$"},
-  {n:"Starbeck's Smokehouse",c:"BBQ / Smoked Meats",t:["bbq"],a:"Waterloo",p:"$$"},
-  {n:"1st Base BBQ",c:"BBQ",t:["bbq"],a:"Waterloo",p:"$$"},
-  {n:"Cindy Lou's BBQ",c:"BBQ",t:["bbq"],a:"Cedar Falls",p:"$$"},
-  {n:"Famous Dave's BBQ",c:"BBQ Chain",t:["bbq"],a:"Waterloo",p:"$$"},
-  {n:"D & K Hickory House",c:"BBQ / Hickory Smoked",t:["bbq"],a:"Waterloo",p:"$$"},
-
-  // ══════════ MEXICAN ══════════
-  {n:"Burritos Express Waterloo 2",c:"Burritos / Mexican Street Food",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"Tacoz California",c:"CA-Style Mexican Street Food",t:["mexican"],a:"200 W 1st St, Cedar Falls",p:"$"},
-  {n:"La Cava",c:"Authentic Mexican",t:["mexican"],a:"126 E Ridgeway Ave, Waterloo",p:"$$"},
-  {n:"El Barco Mexican Seafood Bar & Grill",c:"Mexican Seafood",t:["mexican"],a:"Waterloo",p:"$$"},
-  {n:"Los Cabos Mexican Grill",c:"Mexican",t:["mexican"],a:"Cedar Falls",p:"$$"},
-  {n:"Rudy's Tacos",c:"Tex-Mex",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"Three Amigos Family Restaurant",c:"Authentic Mexican",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"Chilito's",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"Zary's Tacos",c:"Tacos / Mexican",t:["mexican"],a:"Cedar Falls",p:"$"},
-  {n:"Panchero's Mexican Grill",c:"Burritos / Mexican Fast Casual",t:["mexican","fast"],a:"Cedar Falls",p:"$"},
-  {n:"Rancho Chico",c:"Mexican",t:["mexican"],a:"Cedar Falls",p:"$$"},
-  {n:"La Placita Mexican Store",c:"Mexican Market / Food",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"Tacos el Pariente",c:"Authentic Mexican Tacos",t:["mexican"],a:"Cedar Falls",p:"$"},
-  {n:"Mezcalitos",c:"Authentic Mexican (est. 2025)",t:["mexican"],a:"Cedar Falls",p:"$$"},
-  {n:"Zury's Taco Bar",c:"Mexican / Flame-Grilled / Seafood",t:["mexican"],a:"2214 College St, Cedar Falls",p:"$$"},
-  {n:"Amigos Mexican Cuisine & Cantina",c:"Mexican",t:["mexican"],a:"Cedar Falls",p:"$$"},
-  {n:"Los Reyes / Taqueria Los Reyes",c:"Authentic Mexican (4.7 rated)",t:["mexican"],a:"403 Franklin St, Waterloo",p:"$"},
-  {n:"Tortas y Tacos DelValle",c:"Mexican / Tortas & Tacos",t:["mexican"],a:"602 Broadway St, Waterloo",p:"$"},
-  {n:"D'Leon's Taco Rico",c:"Mexican (open 6am-11pm)",t:["mexican"],a:"109 Jefferson St, Waterloo",p:"$"},
-  {n:"Taquiera La Placita",c:"Mexican Taqueria",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"La Michoacana",c:"Mexican Market / Restaurant",t:["mexican"],a:"Lafayette St, Waterloo",p:"$"},
-  {n:"Carlos O'Kelly's",c:"Mexican",t:["mexican"],a:"University Ave, Cedar Falls",p:"$$"},
-  {n:"Pablo's Mexican Grill",c:"Mexican",t:["mexican"],a:"Main St, Cedar Falls",p:"$$"},
-  {n:"Cancun Mexican Bar & Grill",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$$"},
-  {n:"Mi Mexico",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"Casa De Oro",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
-  {n:"El Patron Mexican Grill",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$$"},
-
-  // ══════════ ASIAN ══════════
-  {n:"Thai Bistro",c:"Thai",t:["asian"],a:"Cedar Falls",p:"$$"},
-  {n:"Annie's Vietnamese Sandwiches",c:"Vietnamese / Banh Mi",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"Asian Fusion",c:"Thai / Korean / Vietnamese",t:["asian"],a:"5725 University Ave, Cedar Falls",p:"$$"},
-  {n:"Tokyo Bay Japanese Steakhouse & Sushi",c:"Japanese / Sushi / Hibachi",t:["asian"],a:"Waterloo",p:"$$$"},
-  {n:"Sakura Japanese Steakhouse",c:"Hibachi / Sushi",t:["asian"],a:"Cedar Falls",p:"$$$"},
-  {n:"HuHot Mongolian Grill",c:"Mongolian Stir-Fry Buffet",t:["asian"],a:"Waterloo",p:"$$"},
-  {n:"Golden China",c:"Chinese",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"Gourmet Garden Chinese",c:"Chinese-American / Sushi",t:["asian"],a:"Cedar Falls",p:"$$"},
-  {n:"East China (Cedar Falls)",c:"Chinese",t:["asian"],a:"Cedar Falls",p:"$"},
-  {n:"East China (Waterloo)",c:"Chinese",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"Red Apple Chinese",c:"Chinese",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"Rice House Chinese Teriyaki",c:"Chinese / Teriyaki",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"China Garden",c:"Chinese",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"Panda Express",c:"Chinese Fast Food",t:["asian","fast"],a:"Waterloo",p:"$"},
-  {n:"Mirch Masala Grill",c:"Indian",t:["asian"],a:"Cedar Falls",p:"$$"},
-  {n:"Gyro Hut",c:"Mediterranean / Gyros",t:["asian","american"],a:"1104 Washington St, Waterloo",p:"$"},
-  {n:"Pho & Grill",c:"Vietnamese / Pho",t:["asian"],a:"Waterloo",p:"$"},
-  {n:"Hibachi Sushi Buffet",c:"Chinese / Sushi / Hibachi Buffet",t:["asian"],a:"Waterloo",p:"$$"},
-  {n:"Izumi Sushi & Hibachi",c:"Japanese / Sushi / Hibachi AYCE",t:["asian"],a:"941 E San Marnan Dr, Waterloo",p:"$$"},
-  {n:"Mandarin Spice Asian Grill",c:"Asian Grill",t:["asian"],a:"E San Marnan Dr, Waterloo",p:"$$"},
-  {n:"Hong Kong",c:"Chinese",t:["asian"],a:"University Ave, Cedar Falls",p:"$"},
-  {n:"Great Wall",c:"Chinese (late-night)",t:["asian"],a:"College St, Cedar Falls",p:"$"},
-
-  // ══════════ PIZZA ══════════
-  {n:"Basal Pizza",c:"Neapolitan & Detroit-Style Pizza",t:["pizza"],a:"Waterloo",p:"$$"},
-  {n:"Tony's La Pizzeria",c:"Pizza / Italian",t:["pizza"],a:"Waterloo",p:"$$"},
-  {n:"Pizza Ranch",c:"Pizza Buffet",t:["pizza"],a:"Waterloo",p:"$$"},
-  {n:"Happy Joe's Pizza & Ice Cream",c:"Pizza / Ice Cream",t:["pizza"],a:"Waterloo",p:"$$"},
-  {n:"Casey's",c:"Pizza / Convenience",t:["pizza"],a:"Multiple Locations",p:"$"},
-  {n:"Domino's Pizza",c:"Pizza Chain",t:["pizza","fast"],a:"Cedar Falls / Waterloo",p:"$"},
-  {n:"Papa John's",c:"Pizza Chain",t:["pizza","fast"],a:"1322 W 1st St, Cedar Falls",p:"$"},
-  {n:"Papa Murphy's",c:"Take-N-Bake Pizza",t:["pizza"],a:"5713 University Ave, Cedar Falls",p:"$"},
-  {n:"Little Caesars",c:"Pizza Chain",t:["pizza","fast"],a:"1205 E San Marnan Dr, Waterloo",p:"$"},
-  {n:"Godfather's Pizza",c:"Pizza Chain",t:["pizza"],a:"Cedar Falls",p:"$"},
-  {n:"Pizza Hut",c:"Pizza Chain",t:["pizza","fast"],a:"Waterloo",p:"$"},
-  {n:"Toppers Pizza",c:"Pizza Delivery",t:["pizza"],a:"Cedar Falls",p:"$"},
-  {n:"Marco's Pizza",c:"Pizza Chain (Fresh Dough Daily)",t:["pizza","fast"],a:"3032 Ansborough Ave, Waterloo",p:"$"},
-  {n:"Geno's Pizza",c:"Pizza",t:["pizza"],a:"San Marnan area, Waterloo",p:"$"},
-  {n:"Chad's Pizza and Restaurant",c:"Pizza / American",t:["pizza"],a:"College St, Cedar Falls",p:"$$"},
-  {n:"Urban Pie",c:"Pizza",t:["pizza"],a:"Downtown Cedar Falls",p:"$$"},
-
-  // ══════════ BREAKFAST / BRUNCH ══════════
-  {n:"Tata Yaya",c:"Crepes / Waffles / Souffle Pancakes",t:["breakfast"],a:"Downtown Cedar Falls",p:"$$"},
-  {n:"Morg's",c:"Classic Diner (50+ years)",t:["breakfast","american"],a:"Waterloo",p:"$"},
-  {n:"J's Homestyle Cooking (Mama J's)",c:"Breakfast / Comfort Food",t:["breakfast"],a:"Waterloo",p:"$"},
-  {n:"Newton's Paradise Cafe",c:"Breakfast / Brunch",t:["breakfast"],a:"Waterloo",p:"$"},
-  {n:"Highway 63 Diner",c:"Scratch-Made Diner",t:["breakfast","american"],a:"Waterloo",p:"$"},
-  {n:"Oh My Grill",c:"Brunch / Mediterranean",t:["breakfast"],a:"Cedar Falls",p:"$$"},
-  {n:"Patton Diner",c:"Diner / Breakfast",t:["breakfast"],a:"Cedar Falls",p:"$"},
-  {n:"Waffle Stop",c:"Breakfast / Waffles",t:["breakfast"],a:"E 18th St, Cedar Falls",p:"$"},
-  {n:"Carpenter's Diner",c:"Classic American Diner",t:["breakfast","american"],a:"Waterloo",p:"$"},
-  {n:"IHOP",c:"Breakfast Chain",t:["breakfast"],a:"Waterloo",p:"$"},
-  {n:"Perkins Restaurant & Bakery",c:"Breakfast / American",t:["breakfast"],a:"Waterloo",p:"$$"},
-  {n:"Village Inn",c:"Breakfast / Pie",t:["breakfast"],a:"Cedar Falls",p:"$"},
-  {n:"Cedar Falls Family Restaurant",c:"Family Diner / Breakfast",t:["breakfast","american"],a:"Cedar Falls",p:"$"},
-  {n:"Mike's Diner",c:"24-Hour Diner",t:["breakfast","american"],a:"University Ave, Waterloo",p:"$"},
-
-  // ══════════ COFFEE / BAKERY / DESSERTS ══════════
-  {n:"Cup of Joe",c:"Fair-Trade Coffee / Pastries",t:["coffee"],a:"102 Main St, Cedar Falls",p:"$"},
-  {n:"Lincoln Perk",c:"Coffee / Breakfast",t:["coffee","breakfast"],a:"Cedar Falls",p:"$"},
-  {n:"Scratch Cupcakery",c:"Cupcakes / Bakery (125+ flavors)",t:["coffee"],a:"Cedar Falls & Waterloo",p:"$"},
-  {n:"Panache Tea Room",c:"High Tea / Sandwiches",t:["coffee","breakfast"],a:"Waterloo",p:"$$"},
-  {n:"Crumbl Cookies (Cedar Falls)",c:"Gourmet Cookies",t:["coffee"],a:"421 Viking Plaza Dr, Cedar Falls",p:"$"},
-  {n:"Crumbl Cookies (Waterloo)",c:"Gourmet Cookies",t:["coffee"],a:"1503 Flammang Dr, Waterloo",p:"$"},
-  {n:"Nothing Bundt Cakes",c:"Bundt Cakes / Bakery",t:["coffee"],a:"Waterloo",p:"$$"},
-  {n:"Starbucks",c:"Coffee Chain",t:["coffee"],a:"Cedar Falls / Waterloo",p:"$"},
-  {n:"Panera Bread",c:"Bakery-Cafe / Sandwiches",t:["coffee","fast"],a:"Cedar Falls & Waterloo",p:"$$"},
-  {n:"Bambino's",c:"Custom Cakes / Bakery",t:["coffee"],a:"Waterloo",p:"$$"},
-  {n:"Scooter's Coffee",c:"Coffee / Drive-Thru",t:["coffee"],a:"Waterloo / Cedar Falls",p:"$"},
-  {n:"Caribou Coffee",c:"Coffee / Drive-Thru",t:["coffee"],a:"University Ave, Waterloo",p:"$"},
-  {n:"Sidecar Coffee",c:"Coffee Shop",t:["coffee"],a:"21 W Jefferson St, Waterloo",p:"$"},
-  {n:"Fat Cup",c:"Coffee Shop",t:["coffee"],a:"Waterloo",p:"$"},
-  {n:"Cabin Coffee Co",c:"Coffee / Drive-Thru",t:["coffee"],a:"Kimball Ave, Waterloo",p:"$"},
-  {n:"Verve Kombucha Kitchen & Bar",c:"Kombucha Bar / Kitchen",t:["bar","coffee"],a:"327 W 3rd St, Waterloo",p:"$$"},
-  {n:"Hurts Donut Co.",c:"Donuts (open 24/7)",t:["coffee"],a:"Downtown Cedar Falls",p:"$"},
-  {n:"Big Açaí",c:"Açaí Bowls / Juice",t:["coffee"],a:"100 E 2nd St, Cedar Falls",p:"$"},
-
-  // ══════════ FAST FOOD ══════════
-  {n:"Chick-fil-A",c:"Chicken Sandwiches",t:["fast"],a:"Waterloo",p:"$"},
-  {n:"Culver's (Waterloo)",c:"ButterBurgers / Frozen Custard",t:["fast","burger"],a:"Waterloo",p:"$"},
-  {n:"Culver's (Cedar Falls)",c:"ButterBurgers / Frozen Custard",t:["fast","burger"],a:"Viking Plaza Dr, Cedar Falls",p:"$"},
-  {n:"Raising Cane's",c:"Chicken Fingers",t:["fast"],a:"201 Viking Plaza Dr, Cedar Falls",p:"$"},
-  {n:"Wendy's (Greyhound Dr)",c:"Burgers / Fast Food",t:["fast","burger"],a:"3301 Greyhound Dr, Waterloo",p:"$"},
-  {n:"Wendy's (La Porte)",c:"Burgers / Fast Food",t:["fast","burger"],a:"1815 La Porte, Waterloo",p:"$"},
-  {n:"McDonald's",c:"Burgers / Fast Food",t:["fast","burger"],a:"Multiple Locations",p:"$"},
-  {n:"Burger King",c:"Burgers / Fast Food",t:["fast","burger"],a:"109 Jefferson St, Waterloo",p:"$"},
-  {n:"Arby's",c:"Roast Beef / Fast Food",t:["fast"],a:"Waterloo",p:"$"},
-  {n:"Taco Bell",c:"Mexican Fast Food",t:["fast","mexican"],a:"Waterloo / Cedar Falls",p:"$"},
-  {n:"Taco John's",c:"Mexican Fast Food / Potato Oles",t:["fast","mexican"],a:"1620 Laporte Rd, Waterloo",p:"$"},
-  {n:"KFC",c:"Fried Chicken",t:["fast"],a:"3115 Kimball, Waterloo",p:"$"},
-  {n:"Popeyes",c:"Cajun Fried Chicken",t:["fast"],a:"4015 Lowes Blvd, Waterloo",p:"$"},
-  {n:"Hardee's",c:"Burgers / Biscuits",t:["fast","burger"],a:"Waterloo",p:"$"},
-  {n:"Subway",c:"Subs / Sandwiches",t:["fast"],a:"Multiple Locations",p:"$"},
-  {n:"Jimmy John's",c:"Subs / Sandwiches",t:["fast"],a:"Waterloo",p:"$"},
-  {n:"Freddy's Frozen Custard & Steakburgers",c:"Burgers / Custard",t:["fast","burger"],a:"Waterloo",p:"$"},
-  {n:"Sonic Drive-In",c:"Drive-In / Burgers",t:["fast","burger"],a:"Waterloo",p:"$"},
-  {n:"Dairy Queen",c:"Ice Cream / Burgers",t:["fast"],a:"Waterloo / Cedar Falls",p:"$"},
-  {n:"Noodles & Company",c:"Noodles / Fast Casual",t:["fast"],a:"Cedar Falls",p:"$"},
-  {n:"Pepper Jax Grill",c:"Cheesesteaks / Fast Casual",t:["fast"],a:"Waterloo",p:"$"},
-  {n:"Sub City",c:"Subs / Sandwiches",t:["fast"],a:"Waterloo",p:"$"},
-  {n:"Eddie B's Chicken & Fish",c:"Fried Chicken & Fish",t:["fast"],a:"Waterloo",p:"$"},
-  {n:"Maid-Rite",c:"Loose Meat Sandwiches (Iowa Classic)",t:["fast","american"],a:"Cedar Falls area",p:"$"},
-  {n:"Five Guys",c:"Burgers & Fries",t:["fast","burger"],a:"Waterloo",p:"$$"},
-  {n:"A&W",c:"Root Beer / Burgers",t:["fast","burger"],a:"Waterloo",p:"$"},
-  {n:"Chipotle",c:"Mexican Fast Casual / Burritos",t:["fast","mexican"],a:"Cedar Falls",p:"$"},
-
-  // ══════════ FOOD TRUCKS ══════════
-  {n:"Hungry Charlie's",c:"Sandwiches / American (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
-  {n:"Peelz N Wheelz Pizza",c:"Pizza (Food Truck)",t:["truck","pizza"],a:"Waterloo",p:"$"},
-  {n:"Dominique's Seafood",c:"Seafood (Food Truck)",t:["truck"],a:"Waterloo",p:"$$"},
-  {n:"The Taco Loco",c:"Street Tacos / Burritos (Food Truck)",t:["truck","mexican"],a:"Waterloo",p:"$"},
-  {n:"Salt-N-Pepper Foods",c:"American (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
-  {n:"Taqueria La Familia",c:"Mexican (Food Truck)",t:["truck","mexican"],a:"Waterloo",p:"$"},
-  {n:"Stuber Truck",c:"American (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
-  {n:"Ewell's Chicken & Fish",c:"Fried Chicken & Fish (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
-  {n:"Keepin Up With The Jones's",c:"American (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
-  {n:"T & T BBQ",c:"BBQ (Food Truck)",t:["truck","bbq"],a:"Waterloo area",p:"$"},
-  {n:"Cedar Valley Fish Market",c:"Seafood (Truck & Market)",t:["truck"],a:"Waterloo",p:"$$"},
-  {n:"Rodney's Jamaican Jerk",c:"Jamaican (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
-
-  // ══════════ LOST ISLAND THEME PARK DINING ══════════
-  {n:"Whalebone Grill",c:"Grill (Lost Island)",t:["american"],a:"Lost Island, Waterloo",p:"$$"},
-  {n:"Castaway Cafe",c:"Cafe (Lost Island Waterpark)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
-  {n:"Tree Top Cafe",c:"Cafe (Lost Island Waterpark)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
-  {n:"High Tide Pizza",c:"Pizza (Lost Island Waterpark)",t:["pizza","fast"],a:"Lost Island, Waterloo",p:"$"},
-  {n:"Udaran Delights",c:"Snacks (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
-  {n:"Ummi Ummis",c:"Snacks (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
-  {n:"Totara Market",c:"Market (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
-  {n:"Kotaki Treats",c:"Treats (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
-].map(r => ({
-  name: r.n, cuisine: r.c, types: r.t, address: r.a + ", IA",
-  rating: 0, totalRatings: 0, price: r.p, placeId: "",
-  map: r.n.replace(/[^a-zA-Z0-9 ]/g,"").replace(/ /g,"+") + "+" + r.a.split(",")[0].replace(/ /g,"+") + "+IA"
-}));
-
-function useFallback() {
-    restaurants = [...FALLBACK_RESTAURANTS];
-    sourceNote.textContent = "Top picks from Cedar Valley foodies";
-    pickBtn.disabled = false;
-    pickBtn.textContent = "Pick a Restaurant!";
-    updateCount();
+function emojiFor(r) {
+  const tags = Array.isArray(r.tags) ? r.tags : [];
+  for (const c of CATEGORIES) if (tags.includes(c.key)) return c.emoji;
+  return '🍽️';
 }
 
-// Check server for API key; use fallback if not available
-async function init() {
-    try {
-        const res = await fetch("/api/config");
-        const data = await res.json();
-        if (data.apiKey) {
-            window._gplacesKey = data.apiKey;
-            await loadRestaurants();
-        } else {
-            useFallback();
-        }
-    } catch {
-        useFallback();
-    }
+function badgesFor(r) {
+  const b = [];
+  if (r.price === '$') b.push('Budget Friendly');
+  if (r.price === '$$$' || r.price === '$$$$') b.push('Date Night');
+  if (state.favorites.includes(r.id)) b.push('Local Favorite');
+  return b;
 }
 
-init();
-
-// Filter buttons
-document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        activeFilter = btn.dataset.filter;
-        updateCount();
-    });
-});
-
-function getFiltered() {
-    if (activeFilter === "all") return restaurants;
-    return restaurants.filter(r =>
-        r.types.some(t => t.toLowerCase().includes(activeFilter)) ||
-        r.cuisine.toLowerCase().includes(activeFilter)
-    );
-}
-
-function updateCount() {
-    const pool = getFiltered();
-    countEl.textContent = `${pool.length} restaurants loaded`;
-}
-
-function pickRandom(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+function mapsUrl(r) {
+  if (r.place_id) return `https://www.google.com/maps/place/?q=place_id:${r.place_id}`;
+  const q = encodeURIComponent(`${r.name} ${r.address}`);
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
 function starsFor(rating) {
-    const full = Math.floor(rating);
-    const half = rating - full >= 0.25 ? 1 : 0;
-    return "★".repeat(full) + (half ? "½" : "") + " " + rating.toFixed(1);
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.25 ? 1 : 0;
+  return "★".repeat(full) + (half ? "½" : "") + " " + rating.toFixed(1);
 }
 
-function renderCard(r) {
-    const mapsUrl = r.placeId
-        ? `https://www.google.com/maps/place/?q=place_id:${r.placeId}`
-        : `https://www.google.com/maps/search/${r.map}`;
-    const ratingHtml = r.rating > 0
-        ? `<div class="rating">${starsFor(r.rating)}</div><div class="total-ratings">${r.totalRatings} reviews</div>`
-        : "";
-    return `<div class="card">
-        <h2>${r.name}</h2>
-        <div class="cuisine">${r.cuisine}</div>
-        <div class="location">${r.address}</div>
-        ${ratingHtml}
-        <div class="price">${r.price}</div>
-        <a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a>
-    </div>`;
-}
-
-async function fetchPlaces(query) {
-    return new Promise((resolve) => {
-        const service = new google.maps.places.PlacesService(document.createElement("div"));
-        const request = {
-            query: query,
-            type: "restaurant",
-        };
-        service.textSearch(request, (results, status) => {
-            if (status === google.maps.places.PlacesServiceStatus.OK) {
-                resolve(results);
-            } else {
-                resolve([]);
-            }
-        });
-    });
+// ──────────── API ────────────
+async function api(method, url, body, isAdmin) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (isAdmin && state.adminPin) headers['x-admin-pin'] = state.adminPin;
+  const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (res.status === 401) {
+    state.adminPin = null; LS.del('rc_admin_pin');
+    showAdminLock();
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) throw new Error('API ' + res.status);
+  return res.json();
 }
 
 async function loadRestaurants() {
-    sourceNote.textContent = "Loading live restaurant data...";
-    pickBtn.disabled = true;
-    pickBtn.textContent = "Loading...";
-    restaurants = [];
-
-    // Dynamically load Google Maps JS API with Places library
-    if (!window.google || !window.google.maps) {
-        try {
-            await loadGoogleMapsScript();
-        } catch (err) {
-            useFallback();
-            return;
-        }
-    }
-
-    const seen = new Set();
-
-    for (const query of SEARCH_QUERIES) {
-        try {
-            const results = await fetchPlaces(query);
-            for (const place of results) {
-                if (seen.has(place.place_id)) continue;
-                seen.add(place.place_id);
-
-                const types = place.types || [];
-                const cuisineTypes = types
-                    .filter(t => !["point_of_interest", "establishment", "food"].includes(t))
-                    .map(t => t.replace(/_/g, " "))
-                    .slice(0, 3);
-
-                restaurants.push({
-                    name: place.name,
-                    cuisine: cuisineTypes.join(", ") || "Restaurant",
-                    types: types,
-                    address: place.formatted_address || "",
-                    rating: place.rating || 0,
-                    totalRatings: place.user_ratings_total || 0,
-                    price: PRICE_MAP[place.price_level] || "$$",
-                    placeId: place.place_id,
-                });
-            }
-        } catch (err) {
-            console.warn("Query failed:", query, err);
-        }
-    }
-
-    // Sort by rating (weighted by number of reviews)
-    restaurants.sort((a, b) => {
-        const scoreA = a.rating * Math.log10(Math.max(a.totalRatings, 1));
-        const scoreB = b.rating * Math.log10(Math.max(b.totalRatings, 1));
-        return scoreB - scoreA;
-    });
-
-    // Keep top 20
-    restaurants = restaurants.slice(0, 20);
-
-    if (restaurants.length > 0) {
-        sourceNote.textContent = "Live data from Google Places";
-        pickBtn.disabled = false;
-        pickBtn.textContent = "Pick a Restaurant!";
-        updateCount();
-    } else {
-        useFallback();
-    }
+  try {
+    state.restaurants = await api('GET', '/api/restaurants');
+    document.getElementById('status-line').textContent = `${state.restaurants.length} restaurants loaded`;
+    document.getElementById('pick-btn').disabled = false;
+    document.getElementById('pick-btn').textContent = 'Pick a Restaurant!';
+    renderBrowse();
+    renderFavorites();
+    renderStats();
+  } catch (e) {
+    document.getElementById('status-line').textContent = 'Failed to load restaurants.';
+  }
 }
 
-function loadGoogleMapsScript() {
-    return new Promise((resolve, reject) => {
-        if (window.google && window.google.maps && window.google.maps.places) {
-            resolve();
-            return;
-        }
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${window._gplacesKey}&libraries=places`;
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load Google Maps script"));
-        document.head.appendChild(script);
-    });
+// ──────────── Theme ────────────
+function applyTheme(t) {
+  state.theme = t;
+  LS.set('rc_theme', t);
+  document.documentElement.classList.toggle('light-theme', t === 'light');
+  document.getElementById('theme-toggle').textContent = t === 'light' ? '☀️' : '🌙';
 }
-
-// ── Confetti system ──
-function launchConfetti() {
-    const canvas = document.createElement("canvas");
-    canvas.id = "confetti-canvas";
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const colors = ["#e94560", "#f5c518", "#00d2ff", "#ff6b6b", "#48dbfb", "#ff9ff3", "#feca57"];
-    const particles = [];
-
-    for (let i = 0; i < 120; i++) {
-        particles.push({
-            x: canvas.width / 2 + (Math.random() - 0.5) * 200,
-            y: canvas.height / 2,
-            vx: (Math.random() - 0.5) * 18,
-            vy: Math.random() * -18 - 4,
-            size: Math.random() * 8 + 3,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            rotation: Math.random() * 360,
-            rotSpeed: (Math.random() - 0.5) * 15,
-            gravity: 0.3 + Math.random() * 0.2,
-            life: 1,
-            decay: 0.008 + Math.random() * 0.008,
-            shape: Math.random() > 0.5 ? "rect" : "circle",
-        });
-    }
-
-    function drawFrame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let alive = false;
-        for (const p of particles) {
-            if (p.life <= 0) continue;
-            alive = true;
-            p.x += p.vx;
-            p.vy += p.gravity;
-            p.y += p.vy;
-            p.vx *= 0.98;
-            p.rotation += p.rotSpeed;
-            p.life -= p.decay;
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate((p.rotation * Math.PI) / 180);
-            ctx.globalAlpha = Math.max(0, p.life);
-            ctx.fillStyle = p.color;
-            if (p.shape === "rect") {
-                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-            } else {
-                ctx.beginPath();
-                ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
-        if (alive) requestAnimationFrame(drawFrame);
-        else canvas.remove();
-    }
-    requestAnimationFrame(drawFrame);
-}
-
-// ── Picker animation ──
-pickBtn.addEventListener("click", () => {
-    const pool = getFiltered();
-    if (pool.length === 0) {
-        result.innerHTML = `<div class="card"><h2>No restaurants match this filter</h2></div>`;
-        return;
-    }
-
-    pickBtn.disabled = true;
-    pickBtn.classList.add("spinning");
-
-    const winner = pickRandom(pool);
-
-    // Phase 1: Fast spin (names flying by)
-    // Phase 2: Decelerate (slowing down)
-    // Phase 3: Lock on winner with reveal
-
-    const totalTicks = 30;
-    let tick = 0;
-
-    // Show the reel container
-    result.innerHTML = `<div class="spin-card"><div class="reel-name">&nbsp;</div></div>`;
-    const spinCard = result.querySelector(".spin-card");
-    const reelName = result.querySelector(".reel-name");
-
-    function easeOutExpo(t) {
-        return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-    }
-
-    function runTick() {
-        tick++;
-        const progress = tick / totalTicks;
-
-        // Interval gets longer as we slow down: 40ms → 300ms
-        const delay = 40 + easeOutExpo(progress) * 260;
-
-        if (tick < totalTicks - 3) {
-            // Fast/medium spin — random names
-            const r = pickRandom(pool);
-            reelName.textContent = r.name;
-            reelName.style.transform = `translateY(0)`;
-            reelName.style.opacity = 1;
-
-            // Blur effect during fast spin
-            const blur = Math.max(0, 3 - progress * 4);
-            reelName.style.filter = `blur(${blur}px)`;
-        } else if (tick < totalTicks) {
-            // Last 3 ticks — slowing, teasing near-winner names
-            spinCard.classList.add("slowing");
-            reelName.style.filter = "blur(0)";
-            // Show nearby restaurants (not the winner yet)
-            const nearMiss = pool.filter(r => r !== winner);
-            const r = nearMiss.length > 0 ? pickRandom(nearMiss) : pickRandom(pool);
-            reelName.textContent = r.name;
-        }
-
-        if (tick < totalTicks) {
-            setTimeout(runTick, delay);
-        } else {
-            // Final reveal!
-            setTimeout(() => {
-                pickBtn.classList.remove("spinning");
-                const mapsUrl = winner.placeId
-                    ? `https://www.google.com/maps/place/?q=place_id:${winner.placeId}`
-                    : `https://www.google.com/maps/search/${winner.map}`;
-                const winRating = winner.rating > 0
-                    ? `<div class="rating">${starsFor(winner.rating)}</div><div class="total-ratings">${winner.totalRatings} reviews</div>`
-                    : "";
-                result.innerHTML = `<div class="card winner-card">
-                    <h2>${winner.name}</h2>
-                    <div class="cuisine">${winner.cuisine}</div>
-                    <div class="location">${winner.address}</div>
-                    ${winRating}
-                    <div class="price">${winner.price}</div>
-                    <a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a>
-                </div>`;
-                launchConfetti();
-                pickBtn.disabled = false;
-            }, 400);
-        }
-    }
-
-    runTick();
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  applyTheme(state.theme === 'dark' ? 'light' : 'dark');
 });
+
+// ──────────── Tabs ────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('nav.tab-nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  if (name === 'favorites') renderFavorites();
+  if (name === 'stats') renderStats();
+  if (name === 'browse') renderBrowse();
+  if (name === 'admin' && state.adminPin) { showAdminPanel(); loadAdminData(); }
+}
+document.querySelectorAll('nav.tab-nav button').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// ──────────── Toast ────────────
+function toast(msg) {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ──────────── Modals ────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close-modal]').forEach(el => {
+  el.addEventListener('click', () => closeModal(el.dataset.closeModal));
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ──────────── Card rendering ────────────
+function renderCard(r, opts = {}) {
+  const isFav = state.favorites.includes(r.id);
+  const emoji = emojiFor(r);
+  const badges = badgesFor(r);
+  const badgeHtml = badges.length ? `<div class="badges">${badges.map(b => `<span class="badge">${b}</span>`).join('')}</div>` : '';
+  const ratingHtml = r.rating > 0
+    ? `<div class="rating">${starsFor(r.rating)}</div>`
+    : '';
+  return `<div class="card ${opts.winner ? 'winner-card' : ''}" data-id="${r.id}">
+    <button class="fav-heart ${isFav ? 'faved' : ''}" data-fav-id="${r.id}">${isFav ? '❤' : '♡'}</button>
+    <h2>${emoji} ${escapeHtml(r.name)}</h2>
+    <div class="cuisine">${escapeHtml(r.cuisine)}</div>
+    <div class="location">${escapeHtml(r.address)}</div>
+    ${ratingHtml}
+    <div class="price">${r.price}</div>
+    ${badgeHtml}
+    <a class="maps-link" href="${mapsUrl(r)}" target="_blank" rel="noopener">Open in Google Maps →</a>
+  </div>`;
+}
+
+function renderMiniCard(r) {
+  const isFav = state.favorites.includes(r.id);
+  return `<div class="mini-card" data-id="${r.id}">
+    <button class="fav-heart ${isFav ? 'faved' : ''}" data-fav-id="${r.id}">${isFav ? '❤' : '♡'}</button>
+    <h3><span class="emoji">${emojiFor(r)}</span>${escapeHtml(r.name)}</h3>
+    <div class="cuisine">${escapeHtml(r.cuisine)}</div>
+    <div class="meta">${r.price} · ${escapeHtml(r.address.split(',')[0])}</div>
+  </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function toggleFavorite(id) {
+  const idx = state.favorites.indexOf(id);
+  if (idx >= 0) state.favorites.splice(idx, 1);
+  else state.favorites.push(id);
+  LS.set('rc_favorites', state.favorites);
+  const faved = state.favorites.includes(id);
+  document.querySelectorAll(`[data-fav-id="${id}"]`).forEach(btn => {
+    btn.classList.toggle('faved', faved);
+    if (btn.id === 'detail-fav-btn') btn.textContent = faved ? '❤ Unfavorite' : '♡ Favorite';
+    else if (btn.classList.contains('fav-heart')) btn.textContent = faved ? '❤' : '♡';
+  });
+  renderFavorites();
+}
+
+// Event delegation for favorite hearts and card clicks
+document.addEventListener('click', (e) => {
+  const fav = e.target.closest('[data-fav-id]');
+  if (fav) { e.stopPropagation(); toggleFavorite(parseInt(fav.dataset.favId, 10)); return; }
+  const mini = e.target.closest('.mini-card');
+  if (mini) { showDetail(parseInt(mini.dataset.id, 10)); }
+});
+
+function showDetail(id) {
+  const r = state.restaurants.find(x => x.id === id);
+  if (!r) return;
+  const tagChips = (r.tags || []).map(t => {
+    const cat = CATEGORIES.find(c => c.key === t);
+    return cat ? `<span class="badge">${cat.emoji} ${cat.label}</span>` : '';
+  }).join('');
+  const isFav = state.favorites.includes(r.id);
+  document.getElementById('detail-modal-content').innerHTML = `
+    <h3>${emojiFor(r)} ${escapeHtml(r.name)}</h3>
+    <div style="color:var(--text-dim); margin-bottom:0.4rem;">${escapeHtml(r.cuisine)}</div>
+    <div style="color:var(--text-faint); font-size:0.9rem; margin-bottom:0.6rem;">${escapeHtml(r.address)}</div>
+    <div style="font-size:1.1rem; font-weight:600; color:var(--accent); margin-bottom:0.6rem;">${r.price}</div>
+    ${r.rating > 0 ? `<div style="color:var(--gold); margin-bottom:0.6rem;">${starsFor(r.rating)} · ${r.total_ratings} reviews</div>` : ''}
+    ${tagChips ? `<div class="badges">${tagChips}</div>` : ''}
+    <a class="maps-link" href="${mapsUrl(r)}" target="_blank" rel="noopener" style="display:inline-block; margin-top:0.8rem; color:var(--accent); border-bottom:1px solid var(--accent); text-decoration:none;">Open in Google Maps →</a>
+    <div class="modal-actions">
+      <button class="cancel" data-fav-id="${r.id}" id="detail-fav-btn">${isFav ? '❤ Unfavorite' : '♡ Favorite'}</button>
+      <button class="submit" data-close-modal="detail-modal">Close</button>
+    </div>
+  `;
+  document.getElementById('detail-modal-content').querySelector('[data-close-modal]').addEventListener('click', () => closeModal('detail-modal'));
+  openModal('detail-modal');
+}
+</script>
+
+<script>
+// ──────────── Filter & Pick ────────────
+function getFilteredPool() {
+  let pool = state.restaurants;
+  if (state.activeCategory !== 'all') {
+    pool = pool.filter(r => Array.isArray(r.tags) && r.tags.includes(state.activeCategory));
+  }
+  if (state.activePrices.size > 0) {
+    pool = pool.filter(r => state.activePrices.has(r.price));
+  }
+  if (state.searchQuery) {
+    const q = state.searchQuery.toLowerCase();
+    pool = pool.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.cuisine.toLowerCase().includes(q) ||
+      r.address.toLowerCase().includes(q)
+    );
+  }
+  if (state.favOnly) {
+    pool = pool.filter(r => state.favorites.includes(r.id));
+  }
+  if (state.excludeRecent) {
+    const recentIds = new Set(state.history.slice(0, 5).map(h => h.id));
+    pool = pool.filter(r => !recentIds.has(r.id));
+  }
+  return pool;
+}
+
+function updateStatus() {
+  const pool = getFilteredPool();
+  document.getElementById('status-line').textContent = `${pool.length} of ${state.restaurants.length} restaurants match`;
+}
+
+document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#category-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.activeCategory = btn.dataset.filter;
+    updateStatus();
+  });
+});
+document.querySelectorAll('#price-filters .filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = btn.dataset.price;
+    if (state.activePrices.has(p)) { state.activePrices.delete(p); btn.classList.remove('active'); }
+    else { state.activePrices.add(p); btn.classList.add('active'); }
+    updateStatus();
+  });
+});
+let searchTimer;
+document.getElementById('search-input').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.searchQuery = e.target.value.trim(); updateStatus(); }, 200);
+});
+document.getElementById('toggle-fav-only').checked = state.favOnly;
+document.getElementById('toggle-exclude-recent').checked = state.excludeRecent;
+document.getElementById('toggle-fav-only').addEventListener('change', (e) => {
+  state.favOnly = e.target.checked; LS.set('rc_favoritesOnly', state.favOnly); updateStatus();
+});
+document.getElementById('toggle-exclude-recent').addEventListener('change', (e) => {
+  state.excludeRecent = e.target.checked; LS.set('rc_excludeRecent', state.excludeRecent); updateStatus();
+});
+
+function addToHistory(r) {
+  const entry = { id: r.id, name: r.name, cuisine: r.cuisine, timestamp: Date.now() };
+  state.history.unshift(entry);
+  if (state.history.length > 50) state.history.length = 50;
+  LS.set('rc_history', state.history);
+  renderRecentPicks();
+}
+
+function renderRecentPicks() {
+  const section = document.getElementById('recent-picks-section');
+  const container = document.getElementById('recent-picks');
+  if (state.history.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  container.innerHTML = state.history.slice(0, 5).map(h =>
+    `<div class="mini-card" data-id="${h.id}"><h3>${emojiFor({tags:[]})} ${escapeHtml(h.name)}</h3><div class="cuisine">${escapeHtml(h.cuisine)}</div></div>`
+  ).join('');
+}
+
+// ──────────── Confetti ────────────
+function launchConfetti() {
+  const canvas = document.createElement("canvas");
+  canvas.id = "confetti-canvas";
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ["#e94560", "#f5c518", "#00d2ff", "#ff6b6b", "#48dbfb", "#ff9ff3", "#feca57"];
+  const particles = [];
+  for (let i = 0; i < 120; i++) {
+    particles.push({
+      x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 18,
+      vy: Math.random() * -18 - 4,
+      size: Math.random() * 8 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 15,
+      gravity: 0.3 + Math.random() * 0.2,
+      life: 1,
+      decay: 0.008 + Math.random() * 0.008,
+      shape: Math.random() > 0.5 ? "rect" : "circle",
+    });
+  }
+  function drawFrame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of particles) {
+      if (p.life <= 0) continue;
+      alive = true;
+      p.x += p.vx; p.vy += p.gravity; p.y += p.vy; p.vx *= 0.98;
+      p.rotation += p.rotSpeed; p.life -= p.decay;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      if (p.shape === "rect") ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    }
+    if (alive) requestAnimationFrame(drawFrame);
+    else canvas.remove();
+  }
+  requestAnimationFrame(drawFrame);
+}
+
+// ──────────── Picker animation ────────────
+function revealWinner(winner) {
+  document.getElementById('result').innerHTML = renderCard(winner, { winner: true });
+  addToHistory(winner);
+  launchConfetti();
+}
+
+document.getElementById('pick-btn').addEventListener('click', () => {
+  const pool = getFilteredPool();
+  const result = document.getElementById('result');
+  const pickBtn = document.getElementById('pick-btn');
+  if (pool.length === 0) {
+    result.innerHTML = `<div class="card"><h2>No restaurants match</h2><div class="cuisine">Try removing some filters.</div></div>`;
+    return;
+  }
+  pickBtn.disabled = true;
+  pickBtn.classList.add('spinning');
+  const winner = pool[Math.floor(Math.random() * pool.length)];
+  const totalTicks = 30;
+  let tick = 0;
+  result.innerHTML = `<div class="spin-card"><div class="reel-name">&nbsp;</div></div>`;
+  const spinCard = result.querySelector('.spin-card');
+  const reelName = result.querySelector('.reel-name');
+  const easeOutExpo = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  function runTick() {
+    tick++;
+    const progress = tick / totalTicks;
+    const delay = 40 + easeOutExpo(progress) * 260;
+    if (tick < totalTicks - 3) {
+      const r = pool[Math.floor(Math.random() * pool.length)];
+      reelName.textContent = r.name;
+      reelName.style.filter = `blur(${Math.max(0, 3 - progress * 4)}px)`;
+    } else if (tick < totalTicks) {
+      spinCard.classList.add('slowing');
+      reelName.style.filter = 'blur(0)';
+      const nearMiss = pool.filter(r => r.id !== winner.id);
+      const r = nearMiss.length > 0 ? nearMiss[Math.floor(Math.random() * nearMiss.length)] : winner;
+      reelName.textContent = r.name;
+    }
+    if (tick < totalTicks) setTimeout(runTick, delay);
+    else setTimeout(() => { pickBtn.classList.remove('spinning'); pickBtn.disabled = false; revealWinner(winner); }, 400);
+  }
+  runTick();
+});
+
+// Space bar shortcut
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    const pickTab = document.getElementById('tab-pick');
+    if (pickTab.classList.contains('active')) {
+      e.preventDefault();
+      document.getElementById('pick-btn').click();
+    }
+  }
+});
+
+// ──────────── Battle Mode ────────────
+document.getElementById('battle-btn').addEventListener('click', () => {
+  const pool = getFilteredPool();
+  if (pool.length < 3) { toast('Need at least 3 restaurants for Battle Mode'); return; }
+  const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+  renderBattle(shuffled);
+});
+
+function renderBattle(contestants) {
+  const area = document.getElementById('battle-area');
+  if (contestants.length === 1) {
+    area.innerHTML = '';
+    revealWinner(contestants[0]);
+    return;
+  }
+  area.innerHTML = `
+    <h3 class="section-title" style="text-align:center;">⚔️ Eliminate one</h3>
+    <div class="battle-grid">
+      ${contestants.map((r, i) => `
+        <div class="battle-card" data-battle-idx="${i}">
+          <div style="font-size:2rem;">${emojiFor(r)}</div>
+          <strong>${escapeHtml(r.name)}</strong>
+          <div style="font-size:0.8rem; color:var(--text-dim); margin-top:0.3rem;">${escapeHtml(r.cuisine)} · ${r.price}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="text-align:center; margin-top:0.8rem; font-size:0.85rem; color:var(--text-dim);">Tap the one to eliminate</div>
+  `;
+  area.querySelectorAll('.battle-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.battleIdx, 10);
+      card.classList.add('eliminated');
+      setTimeout(() => {
+        renderBattle(contestants.filter((_, i) => i !== idx));
+      }, 300);
+    });
+  });
+}
+</script>
+
+<script>
+// ──────────── Browse Tab ────────────
+const BROWSE_PAGE_SIZE = 20;
+
+function getBrowseList() {
+  let list = [...state.restaurants];
+  if (state.browseSearch) {
+    const q = state.browseSearch.toLowerCase();
+    list = list.filter(r => r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q) || r.address.toLowerCase().includes(q));
+  }
+  const sortKey = state.browseSort;
+  list.sort((a, b) => {
+    if (sortKey === 'price') return a.price.length - b.price.length || a.name.localeCompare(b.name);
+    return String(a[sortKey] || '').localeCompare(String(b[sortKey] || ''));
+  });
+  return list;
+}
+
+function renderBrowse() {
+  const grid = document.getElementById('browse-grid');
+  const all = getBrowseList();
+  const shown = all.slice(0, (state.browsePage + 1) * BROWSE_PAGE_SIZE);
+  grid.innerHTML = shown.map(renderMiniCard).join('') || '<div class="empty-state">No restaurants.</div>';
+  document.getElementById('load-more-btn').style.display = shown.length < all.length ? 'inline-block' : 'none';
+}
+document.getElementById('browse-search').addEventListener('input', (e) => {
+  state.browseSearch = e.target.value.trim(); state.browsePage = 0; renderBrowse();
+});
+document.getElementById('browse-sort').addEventListener('change', (e) => {
+  state.browseSort = e.target.value; renderBrowse();
+});
+document.getElementById('load-more-btn').addEventListener('click', () => {
+  state.browsePage++; renderBrowse();
+});
+
+// ──────────── Suggest Form ────────────
+function initSuggestTags() {
+  const c = document.getElementById('sg-tags');
+  c.innerHTML = CATEGORIES.map(cat => `<label><input type="checkbox" value="${cat.key}"> ${cat.emoji} ${cat.label}</label>`).join('');
+}
+document.getElementById('suggest-btn').addEventListener('click', () => openModal('suggest-modal'));
+document.getElementById('sg-submit').addEventListener('click', async () => {
+  const name = document.getElementById('sg-name').value.trim();
+  const cuisine = document.getElementById('sg-cuisine').value.trim();
+  const address = document.getElementById('sg-address').value.trim();
+  const price = document.getElementById('sg-price').value;
+  const note = document.getElementById('sg-note').value.trim();
+  const tags = Array.from(document.querySelectorAll('#sg-tags input:checked')).map(i => i.value);
+  if (!name || !cuisine || !address) { toast('Name, cuisine, and address are required.'); return; }
+  try {
+    await api('POST', '/api/suggestions', { name, cuisine, address, price, note, tags });
+    closeModal('suggest-modal');
+    toast('Thanks! Your suggestion has been submitted for review.');
+    ['sg-name','sg-cuisine','sg-address','sg-note'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('#sg-tags input').forEach(i => i.checked = false);
+  } catch { toast('Failed to submit. Try again.'); }
+});
+
+// ──────────── Favorites Tab ────────────
+function renderFavorites() {
+  const grid = document.getElementById('favorites-grid');
+  const empty = document.getElementById('favorites-empty');
+  const favs = state.restaurants.filter(r => state.favorites.includes(r.id));
+  if (favs.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = favs.map(renderMiniCard).join('');
+}
+
+// ──────────── Stats Tab ────────────
+function renderStats() {
+  const c = document.getElementById('stats-content');
+  const hist = state.history;
+  if (hist.length === 0) {
+    c.innerHTML = `<div class="empty-state"><div class="icon">📊</div><div>No picks yet.</div><div style="font-size:0.85rem; margin-top:0.4rem;">Pick a restaurant to see your stats!</div></div>`;
+    return;
+  }
+  const byId = {};
+  state.restaurants.forEach(r => byId[r.id] = r);
+  const cuisineCount = {};
+  const priceCount = { '$':0,'$$':0,'$$$':0,'$$$$':0 };
+  hist.forEach(h => {
+    const r = byId[h.id];
+    if (!r) return;
+    const cat = (r.tags || []).find(t => CATEGORIES.find(c => c.key === t)) || 'other';
+    cuisineCount[cat] = (cuisineCount[cat] || 0) + 1;
+    if (priceCount[r.price] != null) priceCount[r.price]++;
+  });
+  const maxCuisine = Math.max(1, ...Object.values(cuisineCount));
+  const topCuisine = Object.entries(cuisineCount).sort((a,b)=>b[1]-a[1])[0];
+  const uniqueRestaurants = new Set(hist.map(h => h.id)).size;
+
+  const cuisineRows = Object.entries(cuisineCount).sort((a,b) => b[1]-a[1]).map(([k, n]) => {
+    const cat = CATEGORIES.find(c => c.key === k) || { label: k, emoji: '🍽️' };
+    return `<div class="chart-row">
+      <div class="chart-label">${cat.emoji} ${cat.label}</div>
+      <div class="chart-bar-wrap"><div class="chart-bar" style="width:${(n/maxCuisine)*100}%"></div></div>
+      <div class="chart-count">${n}</div>
+    </div>`;
+  }).join('');
+
+  const maxPrice = Math.max(1, ...Object.values(priceCount));
+  const priceRows = Object.entries(priceCount).map(([k, n]) => `
+    <div class="chart-row">
+      <div class="chart-label">${k}</div>
+      <div class="chart-bar-wrap"><div class="chart-bar" style="width:${(n/maxPrice)*100}%"></div></div>
+      <div class="chart-count">${n}</div>
+    </div>
+  `).join('');
+
+  c.innerHTML = `
+    <div class="stat-box"><h4>Total Picks</h4><div class="big-num">${hist.length}</div></div>
+    <div class="stat-box"><h4>Unique Restaurants</h4><div class="big-num">${uniqueRestaurants}</div></div>
+    <div class="stat-box"><h4>Favorites Saved</h4><div class="big-num">${state.favorites.length}</div></div>
+    ${topCuisine ? `<div class="stat-box"><h4>Top Cuisine</h4><div class="big-num">${(CATEGORIES.find(c => c.key === topCuisine[0]) || {label: topCuisine[0]}).label}</div></div>` : ''}
+    <div class="stat-box"><h4>By Cuisine</h4>${cuisineRows}</div>
+    <div class="stat-box"><h4>By Price</h4>${priceRows}</div>
+    <div style="text-align:center; margin-top:1rem;">
+      <button class="secondary-btn" id="clear-history-btn">Clear History</button>
+    </div>
+  `;
+  const clearBtn = document.getElementById('clear-history-btn');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    if (!confirm('Clear all pick history?')) return;
+    state.history = [];
+    LS.set('rc_history', []);
+    renderStats();
+    renderRecentPicks();
+    toast('History cleared');
+  });
+}
+
+// ──────────── Admin ────────────
+function showAdminLock() {
+  document.getElementById('admin-lock').style.display = 'block';
+  document.getElementById('admin-panel').style.display = 'none';
+}
+function showAdminPanel() {
+  document.getElementById('admin-lock').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+}
+
+document.getElementById('admin-unlock-btn').addEventListener('click', async () => {
+  const pin = document.getElementById('admin-pin-input').value.trim();
+  if (!pin) return;
+  try {
+    const res = await fetch('/api/admin/auth', { method: 'POST', headers: { 'x-admin-pin': pin, 'Content-Type': 'application/json' } });
+    const data = await res.json();
+    if (data.valid) {
+      state.adminPin = pin;
+      LS.set('rc_admin_pin', pin);
+      showAdminPanel();
+      loadAdminData();
+      toast('Admin unlocked');
+    } else {
+      toast('Invalid PIN');
+    }
+  } catch { toast('Auth failed'); }
+});
+document.getElementById('admin-logout-btn').addEventListener('click', () => {
+  state.adminPin = null; LS.del('rc_admin_pin');
+  document.getElementById('admin-pin-input').value = '';
+  showAdminLock();
+});
+
+async function loadAdminData() {
+  try {
+    const sugs = await api('GET', '/api/admin/suggestions', null, true);
+    renderAdminSuggestions(sugs);
+  } catch {}
+  renderAdminRestaurants();
+}
+
+function renderAdminSuggestions(sugs) {
+  const c = document.getElementById('admin-suggestions');
+  if (!sugs || sugs.length === 0) { c.innerHTML = '<div style="color:var(--text-faint); font-size:0.9rem;">No pending suggestions.</div>'; return; }
+  c.innerHTML = sugs.map(s => `
+    <div class="admin-row">
+      <div class="info">
+        <strong>${escapeHtml(s.name)}</strong>
+        <small>${escapeHtml(s.cuisine)} · ${escapeHtml(s.address)} · ${s.price}</small>
+        ${s.note ? `<small style="display:block; margin-top:0.3rem;">"${escapeHtml(s.note)}"</small>` : ''}
+      </div>
+      <div class="actions">
+        <button class="btn-approve" data-approve="${s.id}">✓ Approve</button>
+        <button class="btn-reject" data-reject="${s.id}">✕ Reject</button>
+      </div>
+    </div>
+  `).join('');
+  c.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', async () => {
+    try { await api('POST', `/api/admin/suggestions/${b.dataset.approve}/approve`, null, true); toast('Approved'); loadAdminData(); await loadRestaurants(); } catch { toast('Failed'); }
+  }));
+  c.querySelectorAll('[data-reject]').forEach(b => b.addEventListener('click', async () => {
+    try { await api('POST', `/api/admin/suggestions/${b.dataset.reject}/reject`, null, true); toast('Rejected'); loadAdminData(); } catch { toast('Failed'); }
+  }));
+}
+
+function renderAdminRestaurants() {
+  const c = document.getElementById('admin-restaurants');
+  const q = (document.getElementById('admin-search').value || '').toLowerCase();
+  const list = state.restaurants.filter(r => !q || r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q));
+  c.innerHTML = list.slice(0, 50).map(r => `
+    <div class="admin-row">
+      <div class="info">
+        <strong>${escapeHtml(r.name)}</strong>
+        <small>${escapeHtml(r.cuisine)} · ${r.price} · ${escapeHtml(r.address)}</small>
+      </div>
+      <div class="actions">
+        <button class="btn-edit" data-edit="${r.id}">Edit</button>
+        <button class="btn-delete" data-delete="${r.id}">Delete</button>
+      </div>
+    </div>
+  `).join('');
+  if (list.length > 50) c.innerHTML += `<div style="text-align:center; color:var(--text-faint); font-size:0.85rem; margin-top:0.5rem;">Showing first 50 of ${list.length}. Use search to narrow.</div>`;
+  c.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openEditModal(parseInt(b.dataset.edit, 10))));
+  c.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Delete this restaurant?')) return;
+    try { await api('DELETE', `/api/restaurants/${b.dataset.delete}`, null, true); toast('Deleted'); await loadRestaurants(); renderAdminRestaurants(); } catch { toast('Failed'); }
+  }));
+}
+document.getElementById('admin-search').addEventListener('input', renderAdminRestaurants);
+
+function initEditTags() {
+  const c = document.getElementById('ed-tags');
+  c.innerHTML = CATEGORIES.map(cat => `<label><input type="checkbox" value="${cat.key}"> ${cat.emoji} ${cat.label}</label>`).join('');
+}
+function openEditModal(id) {
+  const r = id ? state.restaurants.find(x => x.id === id) : null;
+  document.getElementById('edit-modal-title').textContent = r ? 'Edit Restaurant' : 'New Restaurant';
+  document.getElementById('ed-id').value = r ? r.id : '';
+  document.getElementById('ed-name').value = r ? r.name : '';
+  document.getElementById('ed-cuisine').value = r ? r.cuisine : '';
+  document.getElementById('ed-address').value = r ? r.address : '';
+  document.getElementById('ed-price').value = r ? r.price : '$$';
+  const tags = r && Array.isArray(r.tags) ? r.tags : [];
+  document.querySelectorAll('#ed-tags input').forEach(i => i.checked = tags.includes(i.value));
+  openModal('edit-modal');
+}
+document.getElementById('admin-add-btn').addEventListener('click', () => openEditModal(null));
+document.getElementById('ed-submit').addEventListener('click', async () => {
+  const id = document.getElementById('ed-id').value;
+  const payload = {
+    name: document.getElementById('ed-name').value.trim(),
+    cuisine: document.getElementById('ed-cuisine').value.trim(),
+    address: document.getElementById('ed-address').value.trim(),
+    price: document.getElementById('ed-price').value,
+    tags: Array.from(document.querySelectorAll('#ed-tags input:checked')).map(i => i.value),
+  };
+  if (!payload.name || !payload.cuisine || !payload.address) { toast('Name, cuisine, address required'); return; }
+  try {
+    if (id) await api('PUT', `/api/restaurants/${id}`, payload, true);
+    else await api('POST', '/api/restaurants', payload, true);
+    closeModal('edit-modal');
+    toast(id ? 'Updated' : 'Created');
+    await loadRestaurants();
+    renderAdminRestaurants();
+  } catch { toast('Failed'); }
+});
+
+// ──────────── Init ────────────
+applyTheme(state.theme);
+initSuggestTags();
+initEditTags();
+renderRecentPicks();
+if (state.adminPin) {
+  // verify still valid
+  fetch('/api/admin/auth', { method: 'POST', headers: { 'x-admin-pin': state.adminPin } })
+    .then(r => r.json())
+    .then(d => { if (!d.valid) { state.adminPin = null; LS.del('rc_admin_pin'); } });
+}
+loadRestaurants();
 </script>
 </body>
 </html>
