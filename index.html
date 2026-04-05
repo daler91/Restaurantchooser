@@ -20,27 +20,38 @@
             max-width: 600px;
             width: 90%;
         }
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 0.25rem;
-        }
-        .subtitle {
-            color: #aaa;
-            margin-bottom: 0.3rem;
-            font-size: 1.1rem;
-        }
+        h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+        .subtitle { color: #aaa; margin-bottom: 0.3rem; font-size: 1.1rem; }
         .source-note {
-            color: #666;
-            font-size: 0.8rem;
+            color: #666; font-size: 0.8rem; margin-bottom: 1.5rem; font-style: italic;
+        }
+        .api-key-section {
             margin-bottom: 1.5rem;
-            font-style: italic;
+        }
+        .api-key-section input {
+            padding: 0.5rem 1rem;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 0.85rem;
+            width: 70%;
+            max-width: 320px;
+        }
+        .api-key-section input::placeholder { color: #555; }
+        .api-key-section button {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e94560;
+            background: #e94560;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-left: 0.3rem;
         }
         .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-bottom: 1.5rem;
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            justify-content: center; margin-bottom: 1.5rem;
         }
         .filter-btn {
             padding: 0.4rem 1rem;
@@ -53,35 +64,25 @@
             transition: all 0.2s;
         }
         .filter-btn.active, .filter-btn:hover {
-            background: #e94560;
-            color: #fff;
+            background: #e94560; color: #fff;
         }
         #pick-btn {
-            padding: 1rem 3rem;
-            font-size: 1.4rem;
-            border: none;
-            border-radius: 12px;
-            background: #e94560;
-            color: #fff;
-            cursor: pointer;
+            padding: 1rem 3rem; font-size: 1.4rem; border: none; border-radius: 12px;
+            background: #e94560; color: #fff; cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
         }
         #pick-btn:hover { transform: scale(1.05); }
         #pick-btn:active { transform: scale(0.97); }
+        #pick-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         #result {
-            margin-top: 2rem;
-            min-height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-top: 2rem; min-height: 160px;
+            display: flex; align-items: center; justify-content: center;
         }
         .card {
             background: rgba(255,255,255,0.08);
             backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 1.5rem 2rem;
-            width: 100%;
+            border-radius: 16px; padding: 1.5rem 2rem; width: 100%;
             animation: popIn 0.35s ease;
         }
         @keyframes popIn {
@@ -90,23 +91,26 @@
         }
         .card h2 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #e94560; }
         .card .cuisine { font-size: 1rem; color: #ccc; margin-bottom: 0.3rem; }
-        .card .location { font-size: 0.9rem; color: #999; margin-bottom: 0.6rem; }
-        .card .price { font-size: 1rem; }
+        .card .location { font-size: 0.9rem; color: #999; margin-bottom: 0.4rem; }
+        .card .rating { font-size: 0.95rem; color: #f5c518; margin-bottom: 0.3rem; }
+        .card .price { font-size: 1rem; margin-bottom: 0.3rem; }
+        .card .total-ratings { font-size: 0.8rem; color: #777; }
         .card a {
-            display: inline-block;
-            margin-top: 0.8rem;
-            color: #e94560;
-            text-decoration: none;
-            border-bottom: 1px solid #e94560;
+            display: inline-block; margin-top: 0.8rem;
+            color: #e94560; text-decoration: none; border-bottom: 1px solid #e94560;
         }
-        .spin .card { animation: none; }
+        .spinning-name { animation: slotSpin 0.15s linear; }
         @keyframes slotSpin {
             0% { opacity: 0; transform: translateY(-20px); }
             50% { opacity: 1; transform: translateY(0); }
             100% { opacity: 0; transform: translateY(20px); }
         }
-        .spinning-name {
-            animation: slotSpin 0.15s linear;
+        .status {
+            margin-top: 1rem; font-size: 0.85rem; color: #888;
+        }
+        .status.error { color: #e94560; }
+        .restaurant-count {
+            font-size: 0.8rem; color: #555; margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -114,109 +118,230 @@
 <div class="container">
     <h1>Where should we eat?</h1>
     <p class="subtitle">Waterloo &amp; Cedar Falls, Iowa</p>
-    <p class="source-note">Top picks from Cedar Valley foodies &amp; local favorites</p>
+    <p class="source-note">Live data from Google Places — refreshed every visit</p>
+
+    <div class="api-key-section" id="api-key-section">
+        <input type="password" id="api-key-input" placeholder="Paste your Google Places API key">
+        <button id="api-key-btn">Load</button>
+        <div class="status" id="api-status"></div>
+    </div>
 
     <div class="filters">
         <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="american">American</button>
-        <button class="filter-btn" data-filter="mexican">Mexican</button>
-        <button class="filter-btn" data-filter="asian">Asian</button>
-        <button class="filter-btn" data-filter="italian">Italian</button>
-        <button class="filter-btn" data-filter="bbq">BBQ / Smokehouse</button>
-        <button class="filter-btn" data-filter="breakfast">Breakfast / Brunch</button>
+        <button class="filter-btn" data-filter="restaurant">Restaurant</button>
+        <button class="filter-btn" data-filter="bar">Bar & Grill</button>
+        <button class="filter-btn" data-filter="cafe">Cafe</button>
         <button class="filter-btn" data-filter="pizza">Pizza</button>
-        <button class="filter-btn" data-filter="burger">Burgers</button>
+        <button class="filter-btn" data-filter="mexican">Mexican</button>
+        <button class="filter-btn" data-filter="chinese">Chinese</button>
+        <button class="filter-btn" data-filter="american">American</button>
     </div>
 
-    <button id="pick-btn">Pick a Restaurant!</button>
+    <div class="restaurant-count" id="restaurant-count"></div>
+
+    <button id="pick-btn" disabled>Loading restaurants...</button>
 
     <div id="result"></div>
 </div>
 
 <script>
-// Top 20 Cedar Valley foodie favorites — sourced from the Waterloo-Cedar Falls
-// Area Foodies group, KHAK, Little Village, Wanderlog, and local review sites.
-const restaurants = [
-    // American / Fine Dining / Gastropub
-    { name: "The Brown Bottle", cuisine: "Italian-American (since 1972)", category: "italian", location: "Cedar Falls", price: "$$", map: "The+Brown+Bottle+1111+Center+St+Cedar+Falls+IA" },
-    { name: "Galleria de Paco", cuisine: "European-American Fine Dining", category: "american", location: "Waterloo", price: "$$$", map: "Galleria+de+Paco+622+Commercial+St+Waterloo+IA" },
-    { name: "Montage", cuisine: "American / Creative", category: "american", location: "Cedar Falls", price: "$$", map: "Montage+Cedar+Falls+IA" },
-    { name: "SingleSpeed Brewing Co", cuisine: "Brewpub / American", category: "american", location: "Waterloo", price: "$$", map: "SingleSpeed+Brewing+325+Commercial+St+Waterloo+IA" },
-    { name: "Whiskey Road Tavern & Grill", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Whiskey+Road+Tavern+Grill+Cedar+Falls+IA" },
-    { name: "George's Local", cuisine: "American / Farm-to-Table", category: "american", location: "Cedar Falls", price: "$$", map: "Georges+Local+Cedar+Falls+IA" },
-    { name: "1850 Patio & Grill", cuisine: "American / Grilled", category: "american", location: "Waterloo", price: "$$", map: "1850+Patio+Grill+Waterloo+IA" },
-    { name: "Iowa PrimeHouse", cuisine: "Steakhouse / Local", category: "american", location: "Waterloo", price: "$$$", map: "Iowa+PrimeHouse+Waterloo+IA" },
-    { name: "Rodney's Kitchen", cuisine: "American Comfort Food", category: "american", location: "Waterloo", price: "$$", map: "Rodneys+Kitchen+Waterloo+IA" },
-
-    // Burgers
-    { name: "King Bucks", cuisine: "Gourmet Burgers", category: "burger", location: "Cedar Falls", price: "$$", map: "King+Bucks+Cedar+Falls+IA" },
-    { name: "Peppers Grill & Sports Bar", cuisine: "Burgers / Bar & Grill", category: "burger", location: "Cedar Falls", price: "$$", map: "Peppers+Grill+Cedar+Falls+IA" },
-    { name: "Southtown Restaurant & Bar", cuisine: "Burgers / Tenderloin", category: "burger", location: "Waterloo", price: "$", map: "Southtown+Restaurant+Bar+Waterloo+IA" },
-    { name: "Mac's Drive-In", cuisine: "Classic Drive-In / Burgers", category: "burger", location: "Waterloo", price: "$", map: "Macs+Drive+In+Waterloo+IA" },
-
-    // BBQ / Smokehouse
-    { name: "Starbeck's Smokehouse", cuisine: "BBQ / Smoked Meats", category: "bbq", location: "Waterloo", price: "$$", map: "Starbecks+Smokehouse+Waterloo+IA" },
-
-    // Mexican
-    { name: "Three Amigos Family Restaurant", cuisine: "Authentic Mexican", category: "mexican", location: "Waterloo", price: "$", map: "Three+Amigos+Family+Restaurant+Waterloo+IA" },
-    { name: "Los Cabos Mexican Grill", cuisine: "Mexican", category: "mexican", location: "Cedar Falls", price: "$$", map: "Los+Cabos+Mexican+Grill+Cedar+Falls+IA" },
-    { name: "Rudy's Tacos", cuisine: "Tex-Mex", category: "mexican", location: "Waterloo", price: "$", map: "Rudys+Tacos+Waterloo+IA" },
-
-    // Asian
-    { name: "Thai Bistro", cuisine: "Thai", category: "asian", location: "Cedar Falls", price: "$$", map: "Thai+Bistro+Cedar+Falls+IA" },
-    { name: "Annie's Vietnamese Sandwiches", cuisine: "Vietnamese / Banh Mi", category: "asian", location: "Waterloo", price: "$", map: "Annies+Vietnamese+Sandwiches+Waterloo+IA" },
-
-    // Italian / Pizza
-    { name: "Brown Bottle Waterloo", cuisine: "Italian", category: "italian", location: "Waterloo", price: "$$", map: "Brown+Bottle+Waterloo+IA" },
-    { name: "Basal Pizza", cuisine: "Artisan Pizza", category: "pizza", location: "Waterloo", price: "$$", map: "Basal+Pizza+Waterloo+IA" },
-    { name: "Tony's La Pizzeria", cuisine: "Pizza / Italian", category: "pizza", location: "Waterloo", price: "$$", map: "Tonys+La+Pizzeria+Waterloo+IA" },
-
-    // Breakfast / Brunch
-    { name: "Morg's", cuisine: "Classic Diner / Breakfast", category: "breakfast", location: "Waterloo", price: "$", map: "Morgs+Waterloo+IA" },
-    { name: "Newton's Paradise Cafe", cuisine: "Breakfast / Brunch", category: "breakfast", location: "Waterloo", price: "$", map: "Newtons+Paradise+Cafe+Waterloo+IA" },
-    { name: "J's Homestyle Cooking (Mama J's)", cuisine: "Breakfast / Comfort Food", category: "breakfast", location: "Waterloo", price: "$", map: "Js+Homestyle+Cooking+Waterloo+IA" },
-    { name: "Highway 63 Diner", cuisine: "Classic Diner / Breakfast", category: "breakfast", location: "Waterloo", price: "$", map: "Highway+63+Diner+Waterloo+IA" },
-    { name: "Oh My Grill", cuisine: "Brunch / American", category: "breakfast", location: "Cedar Falls", price: "$$", map: "Oh+My+Grill+Cedar+Falls+IA" },
-    { name: "Patton Diner", cuisine: "Diner / Breakfast", category: "breakfast", location: "Cedar Falls", price: "$", map: "Patton+Diner+Cedar+Falls+IA" },
-    { name: "The Horny Toad American Bar & Grill", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Horny+Toad+American+Bar+Grill+Cedar+Falls+IA" },
+const SEARCH_QUERIES = [
+    "best restaurants in Waterloo Iowa",
+    "best restaurants in Cedar Falls Iowa",
+    "top rated food Waterloo Cedar Falls Iowa",
 ];
 
-let activeFilter = "all";
+const PRICE_MAP = { 0: "Free", 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
+let restaurants = [];
+let activeFilter = "all";
+let apiKey = localStorage.getItem("gplaces_api_key") || "";
+
+const pickBtn = document.getElementById("pick-btn");
+const result = document.getElementById("result");
+const apiKeyInput = document.getElementById("api-key-input");
+const apiKeyBtn = document.getElementById("api-key-btn");
+const apiStatus = document.getElementById("api-status");
+const apiKeySection = document.getElementById("api-key-section");
+const countEl = document.getElementById("restaurant-count");
+
+// If we already have a key saved, auto-load
+if (apiKey) {
+    apiKeyInput.value = "••••••••••••••••";
+    loadRestaurants();
+}
+
+apiKeyBtn.addEventListener("click", () => {
+    const val = apiKeyInput.value.trim();
+    if (!val || val === "••••••••••••••••") return;
+    apiKey = val;
+    localStorage.setItem("gplaces_api_key", apiKey);
+    loadRestaurants();
+});
+
+apiKeyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") apiKeyBtn.click();
+});
+
+// Filter buttons
 document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         activeFilter = btn.dataset.filter;
+        updateCount();
     });
 });
 
 function getFiltered() {
     if (activeFilter === "all") return restaurants;
-    return restaurants.filter(r => r.category === activeFilter);
+    return restaurants.filter(r =>
+        r.types.some(t => t.toLowerCase().includes(activeFilter)) ||
+        r.cuisine.toLowerCase().includes(activeFilter)
+    );
+}
+
+function updateCount() {
+    const pool = getFiltered();
+    countEl.textContent = `${pool.length} restaurants loaded`;
 }
 
 function pickRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function starsFor(rating) {
+    const full = Math.floor(rating);
+    const half = rating - full >= 0.25 ? 1 : 0;
+    return "★".repeat(full) + (half ? "½" : "") + " " + rating.toFixed(1);
+}
+
 function renderCard(r) {
     return `<div class="card">
         <h2>${r.name}</h2>
         <div class="cuisine">${r.cuisine}</div>
-        <div class="location">${r.location}</div>
+        <div class="location">${r.address}</div>
+        <div class="rating">${starsFor(r.rating)}</div>
         <div class="price">${r.price}</div>
-        <a href="https://www.google.com/maps/search/${r.map}" target="_blank" rel="noopener">Open in Google Maps</a>
+        <div class="total-ratings">${r.totalRatings} reviews</div>
+        <a href="https://www.google.com/maps/place/?q=place_id:${r.placeId}" target="_blank" rel="noopener">Open in Google Maps</a>
     </div>`;
 }
 
-const pickBtn = document.getElementById("pick-btn");
-const result = document.getElementById("result");
+async function fetchPlaces(query) {
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
 
+    // Use CORS proxy approach — Google Places API doesn't support browser CORS,
+    // so we load via the Places JS library instead
+    return new Promise((resolve) => {
+        const service = new google.maps.places.PlacesService(document.createElement("div"));
+        const request = {
+            query: query,
+            type: "restaurant",
+        };
+        service.textSearch(request, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                resolve(results);
+            } else {
+                resolve([]);
+            }
+        });
+    });
+}
+
+async function loadRestaurants() {
+    apiStatus.textContent = "Loading live restaurant data...";
+    apiStatus.className = "status";
+    pickBtn.disabled = true;
+    pickBtn.textContent = "Loading...";
+    restaurants = [];
+
+    // Dynamically load Google Maps JS API with Places library
+    if (!window.google || !window.google.maps) {
+        try {
+            await loadGoogleMapsScript();
+        } catch (err) {
+            apiStatus.textContent = "Failed to load Google Maps API. Check your API key.";
+            apiStatus.className = "status error";
+            pickBtn.textContent = "Pick a Restaurant!";
+            return;
+        }
+    }
+
+    const seen = new Set();
+
+    for (const query of SEARCH_QUERIES) {
+        try {
+            const results = await fetchPlaces(query);
+            for (const place of results) {
+                if (seen.has(place.place_id)) continue;
+                seen.add(place.place_id);
+
+                const types = place.types || [];
+                const cuisineTypes = types
+                    .filter(t => !["point_of_interest", "establishment", "food"].includes(t))
+                    .map(t => t.replace(/_/g, " "))
+                    .slice(0, 3);
+
+                restaurants.push({
+                    name: place.name,
+                    cuisine: cuisineTypes.join(", ") || "Restaurant",
+                    types: types,
+                    address: place.formatted_address || "",
+                    rating: place.rating || 0,
+                    totalRatings: place.user_ratings_total || 0,
+                    price: PRICE_MAP[place.price_level] || "$$",
+                    placeId: place.place_id,
+                });
+            }
+        } catch (err) {
+            console.warn("Query failed:", query, err);
+        }
+    }
+
+    // Sort by rating (weighted by number of reviews)
+    restaurants.sort((a, b) => {
+        const scoreA = a.rating * Math.log10(Math.max(a.totalRatings, 1));
+        const scoreB = b.rating * Math.log10(Math.max(b.totalRatings, 1));
+        return scoreB - scoreA;
+    });
+
+    // Keep top 20
+    restaurants = restaurants.slice(0, 20);
+
+    if (restaurants.length > 0) {
+        apiStatus.textContent = `Loaded ${restaurants.length} top-rated restaurants!`;
+        apiStatus.className = "status";
+        pickBtn.disabled = false;
+        pickBtn.textContent = "Pick a Restaurant!";
+        updateCount();
+    } else {
+        apiStatus.textContent = "No restaurants found. Check your API key and ensure Places API is enabled.";
+        apiStatus.className = "status error";
+        pickBtn.textContent = "Pick a Restaurant!";
+    }
+}
+
+function loadGoogleMapsScript() {
+    return new Promise((resolve, reject) => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+            resolve();
+            return;
+        }
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Google Maps script"));
+        document.head.appendChild(script);
+    });
+}
+
+// Pick button
 pickBtn.addEventListener("click", () => {
     const pool = getFiltered();
     if (pool.length === 0) {
-        result.innerHTML = `<div class="card"><h2>No restaurants found</h2></div>`;
+        result.innerHTML = `<div class="card"><h2>No restaurants match this filter</h2></div>`;
         return;
     }
 
