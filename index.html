@@ -26,8 +26,14 @@
         }
         .subtitle {
             color: #aaa;
-            margin-bottom: 2rem;
+            margin-bottom: 0.3rem;
             font-size: 1.1rem;
+        }
+        .source-note {
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 1.5rem;
+            font-style: italic;
         }
         .filters {
             display: flex;
@@ -108,6 +114,7 @@
 <div class="container">
     <h1>Where should we eat?</h1>
     <p class="subtitle">Waterloo &amp; Cedar Falls, Iowa</p>
+    <p class="source-note">Top picks from Cedar Valley foodies &amp; local favorites</p>
 
     <div class="filters">
         <button class="filter-btn active" data-filter="all">All</button>
@@ -115,10 +122,10 @@
         <button class="filter-btn" data-filter="mexican">Mexican</button>
         <button class="filter-btn" data-filter="asian">Asian</button>
         <button class="filter-btn" data-filter="italian">Italian</button>
+        <button class="filter-btn" data-filter="bbq">BBQ / Smokehouse</button>
+        <button class="filter-btn" data-filter="breakfast">Breakfast / Brunch</button>
         <button class="filter-btn" data-filter="pizza">Pizza</button>
-        <button class="filter-btn" data-filter="bbq">BBQ</button>
-        <button class="filter-btn" data-filter="breakfast">Breakfast</button>
-        <button class="filter-btn" data-filter="fast">Fast Food</button>
+        <button class="filter-btn" data-filter="burger">Burgers</button>
     </div>
 
     <button id="pick-btn">Pick a Restaurant!</button>
@@ -127,65 +134,51 @@
 </div>
 
 <script>
+// Top 20 Cedar Valley foodie favorites — sourced from the Waterloo-Cedar Falls
+// Area Foodies group, KHAK, Little Village, Wanderlog, and local review sites.
 const restaurants = [
-    // American
-    { name: "Montage", cuisine: "American", category: "american", location: "Cedar Falls", price: "$$", map: "Montage+Cedar+Falls+IA" },
-    { name: "Becker's On the Avenue", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Beckers+On+the+Avenue+Cedar+Falls+IA" },
-    { name: "The Brown Bottle", cuisine: "American / Italian", category: "american", location: "Waterloo", price: "$$", map: "The+Brown+Bottle+Waterloo+IA" },
-    { name: "Galleria de Paco", cuisine: "American / Fine Dining", category: "american", location: "Waterloo", price: "$$$", map: "Galleria+de+Paco+Waterloo+IA" },
-    { name: "SingleSpeed Brewing Co", cuisine: "American / Brewpub", category: "american", location: "Waterloo", price: "$$", map: "SingleSpeed+Brewing+Co+Waterloo+IA" },
-    { name: "Peppers Grill & Sports Bar", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Peppers+Grill+Cedar+Falls+IA" },
-    { name: "Whiskey Road", cuisine: "American", category: "american", location: "Cedar Falls", price: "$$", map: "Whiskey+Road+Cedar+Falls+IA" },
-    { name: "Tony's La Pizzeria", cuisine: "Italian / American", category: "american", location: "Waterloo", price: "$$", map: "Tonys+La+Pizzeria+Waterloo+IA" },
-    { name: "The Brass Tap", cuisine: "American / Gastropub", category: "american", location: "Waterloo", price: "$$", map: "The+Brass+Tap+Waterloo+IA" },
-    { name: "Doughy's", cuisine: "American / Comfort Food", category: "american", location: "Waterloo", price: "$", map: "Doughys+Waterloo+IA" },
-    { name: "Screaming Eagle", cuisine: "American", category: "american", location: "Waterloo", price: "$$", map: "Screaming+Eagle+Waterloo+IA" },
+    // American / Fine Dining / Gastropub
+    { name: "The Brown Bottle", cuisine: "Italian-American (since 1972)", category: "italian", location: "Cedar Falls", price: "$$", map: "The+Brown+Bottle+1111+Center+St+Cedar+Falls+IA" },
+    { name: "Galleria de Paco", cuisine: "European-American Fine Dining", category: "american", location: "Waterloo", price: "$$$", map: "Galleria+de+Paco+622+Commercial+St+Waterloo+IA" },
+    { name: "Montage", cuisine: "American / Creative", category: "american", location: "Cedar Falls", price: "$$", map: "Montage+Cedar+Falls+IA" },
+    { name: "SingleSpeed Brewing Co", cuisine: "Brewpub / American", category: "american", location: "Waterloo", price: "$$", map: "SingleSpeed+Brewing+325+Commercial+St+Waterloo+IA" },
+    { name: "Whiskey Road Tavern & Grill", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Whiskey+Road+Tavern+Grill+Cedar+Falls+IA" },
+    { name: "George's Local", cuisine: "American / Farm-to-Table", category: "american", location: "Cedar Falls", price: "$$", map: "Georges+Local+Cedar+Falls+IA" },
+    { name: "1850 Patio & Grill", cuisine: "American / Grilled", category: "american", location: "Waterloo", price: "$$", map: "1850+Patio+Grill+Waterloo+IA" },
+    { name: "Iowa PrimeHouse", cuisine: "Steakhouse / Local", category: "american", location: "Waterloo", price: "$$$", map: "Iowa+PrimeHouse+Waterloo+IA" },
+    { name: "Rodney's Kitchen", cuisine: "American Comfort Food", category: "american", location: "Waterloo", price: "$$", map: "Rodneys+Kitchen+Waterloo+IA" },
+
+    // Burgers
+    { name: "King Bucks", cuisine: "Gourmet Burgers", category: "burger", location: "Cedar Falls", price: "$$", map: "King+Bucks+Cedar+Falls+IA" },
+    { name: "Peppers Grill & Sports Bar", cuisine: "Burgers / Bar & Grill", category: "burger", location: "Cedar Falls", price: "$$", map: "Peppers+Grill+Cedar+Falls+IA" },
+    { name: "Southtown Restaurant & Bar", cuisine: "Burgers / Tenderloin", category: "burger", location: "Waterloo", price: "$", map: "Southtown+Restaurant+Bar+Waterloo+IA" },
+    { name: "Mac's Drive-In", cuisine: "Classic Drive-In / Burgers", category: "burger", location: "Waterloo", price: "$", map: "Macs+Drive+In+Waterloo+IA" },
+
+    // BBQ / Smokehouse
+    { name: "Starbeck's Smokehouse", cuisine: "BBQ / Smoked Meats", category: "bbq", location: "Waterloo", price: "$$", map: "Starbecks+Smokehouse+Waterloo+IA" },
 
     // Mexican
+    { name: "Three Amigos Family Restaurant", cuisine: "Authentic Mexican", category: "mexican", location: "Waterloo", price: "$", map: "Three+Amigos+Family+Restaurant+Waterloo+IA" },
     { name: "Los Cabos Mexican Grill", cuisine: "Mexican", category: "mexican", location: "Cedar Falls", price: "$$", map: "Los+Cabos+Mexican+Grill+Cedar+Falls+IA" },
-    { name: "Mi Mexico", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$", map: "Mi+Mexico+Waterloo+IA" },
-    { name: "Cancun Mexican Bar & Grill", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$$", map: "Cancun+Mexican+Bar+Grill+Waterloo+IA" },
-    { name: "Casa De Oro", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$", map: "Casa+De+Oro+Waterloo+IA" },
-    { name: "El Patron Mexican Grill", cuisine: "Mexican", category: "mexican", location: "Waterloo", price: "$$", map: "El+Patron+Mexican+Grill+Waterloo+IA" },
+    { name: "Rudy's Tacos", cuisine: "Tex-Mex", category: "mexican", location: "Waterloo", price: "$", map: "Rudys+Tacos+Waterloo+IA" },
 
     // Asian
     { name: "Thai Bistro", cuisine: "Thai", category: "asian", location: "Cedar Falls", price: "$$", map: "Thai+Bistro+Cedar+Falls+IA" },
-    { name: "Pho & Grill", cuisine: "Vietnamese", category: "asian", location: "Waterloo", price: "$", map: "Pho+and+Grill+Waterloo+IA" },
-    { name: "China Garden", cuisine: "Chinese", category: "asian", location: "Waterloo", price: "$", map: "China+Garden+Waterloo+IA" },
-    { name: "Hibachi Grill & Supreme Buffet", cuisine: "Asian Buffet", category: "asian", location: "Waterloo", price: "$$", map: "Hibachi+Grill+Supreme+Buffet+Waterloo+IA" },
-    { name: "Sakura Japanese Steakhouse", cuisine: "Japanese", category: "asian", location: "Waterloo", price: "$$$", map: "Sakura+Japanese+Steakhouse+Waterloo+IA" },
-    { name: "Golden China", cuisine: "Chinese", category: "asian", location: "Cedar Falls", price: "$", map: "Golden+China+Cedar+Falls+IA" },
+    { name: "Annie's Vietnamese Sandwiches", cuisine: "Vietnamese / Banh Mi", category: "asian", location: "Waterloo", price: "$", map: "Annies+Vietnamese+Sandwiches+Waterloo+IA" },
 
-    // Italian
-    { name: "Olive Garden", cuisine: "Italian", category: "italian", location: "Waterloo", price: "$$", map: "Olive+Garden+Waterloo+IA" },
-    { name: "The Brown Bottle", cuisine: "Italian / American", category: "italian", location: "Waterloo", price: "$$", map: "The+Brown+Bottle+Waterloo+IA" },
+    // Italian / Pizza
+    { name: "Brown Bottle Waterloo", cuisine: "Italian", category: "italian", location: "Waterloo", price: "$$", map: "Brown+Bottle+Waterloo+IA" },
+    { name: "Basal Pizza", cuisine: "Artisan Pizza", category: "pizza", location: "Waterloo", price: "$$", map: "Basal+Pizza+Waterloo+IA" },
+    { name: "Tony's La Pizzeria", cuisine: "Pizza / Italian", category: "pizza", location: "Waterloo", price: "$$", map: "Tonys+La+Pizzeria+Waterloo+IA" },
 
-    // Pizza
-    { name: "Casey's", cuisine: "Pizza", category: "pizza", location: "Waterloo / Cedar Falls", price: "$", map: "Caseys+Waterloo+IA" },
-    { name: "Happy Joe's Pizza", cuisine: "Pizza", category: "pizza", location: "Waterloo", price: "$$", map: "Happy+Joes+Pizza+Waterloo+IA" },
-    { name: "Domino's Pizza", cuisine: "Pizza", category: "pizza", location: "Waterloo / Cedar Falls", price: "$", map: "Dominos+Pizza+Waterloo+IA" },
-    { name: "Pizza Ranch", cuisine: "Pizza / Buffet", category: "pizza", location: "Waterloo", price: "$$", map: "Pizza+Ranch+Waterloo+IA" },
-    { name: "Toppers Pizza", cuisine: "Pizza", category: "pizza", location: "Cedar Falls", price: "$", map: "Toppers+Pizza+Cedar+Falls+IA" },
-
-    // BBQ
-    { name: "Famous Dave's BBQ", cuisine: "BBQ", category: "bbq", location: "Waterloo", price: "$$", map: "Famous+Daves+BBQ+Waterloo+IA" },
-    { name: "Rudy's Tacos", cuisine: "Tex-Mex / BBQ", category: "bbq", location: "Waterloo", price: "$", map: "Rudys+Tacos+Waterloo+IA" },
-
-    // Breakfast
-    { name: "Lincoln Perk", cuisine: "Coffee / Breakfast", category: "breakfast", location: "Cedar Falls", price: "$", map: "Lincoln+Perk+Cedar+Falls+IA" },
-    { name: "IHOP", cuisine: "Breakfast", category: "breakfast", location: "Waterloo", price: "$", map: "IHOP+Waterloo+IA" },
-    { name: "Perkins Restaurant", cuisine: "Breakfast / American", category: "breakfast", location: "Waterloo", price: "$$", map: "Perkins+Restaurant+Waterloo+IA" },
-    { name: "Village Inn", cuisine: "Breakfast / American", category: "breakfast", location: "Cedar Falls", price: "$", map: "Village+Inn+Cedar+Falls+IA" },
-
-    // Fast Food
-    { name: "Chick-fil-A", cuisine: "Fast Food / Chicken", category: "fast", location: "Waterloo", price: "$", map: "Chick+fil+A+Waterloo+IA" },
-    { name: "Culver's", cuisine: "Fast Food / Burgers", category: "fast", location: "Waterloo / Cedar Falls", price: "$", map: "Culvers+Waterloo+IA" },
-    { name: "Raising Cane's", cuisine: "Fast Food / Chicken", category: "fast", location: "Cedar Falls", price: "$", map: "Raising+Canes+Cedar+Falls+IA" },
-    { name: "Taco Bell", cuisine: "Fast Food / Mexican", category: "fast", location: "Waterloo / Cedar Falls", price: "$", map: "Taco+Bell+Waterloo+IA" },
-    { name: "Arby's", cuisine: "Fast Food", category: "fast", location: "Waterloo", price: "$", map: "Arbys+Waterloo+IA" },
-    { name: "Freddy's Frozen Custard", cuisine: "Fast Food / Burgers", category: "fast", location: "Waterloo", price: "$", map: "Freddys+Frozen+Custard+Waterloo+IA" },
-    { name: "Panera Bread", cuisine: "Fast Casual", category: "fast", location: "Waterloo", price: "$$", map: "Panera+Bread+Waterloo+IA" },
-    { name: "Wendy's", cuisine: "Fast Food / Burgers", category: "fast", location: "Waterloo / Cedar Falls", price: "$", map: "Wendys+Waterloo+IA" },
+    // Breakfast / Brunch
+    { name: "Morg's", cuisine: "Classic Diner / Breakfast", category: "breakfast", location: "Waterloo", price: "$", map: "Morgs+Waterloo+IA" },
+    { name: "Newton's Paradise Cafe", cuisine: "Breakfast / Brunch", category: "breakfast", location: "Waterloo", price: "$", map: "Newtons+Paradise+Cafe+Waterloo+IA" },
+    { name: "J's Homestyle Cooking (Mama J's)", cuisine: "Breakfast / Comfort Food", category: "breakfast", location: "Waterloo", price: "$", map: "Js+Homestyle+Cooking+Waterloo+IA" },
+    { name: "Highway 63 Diner", cuisine: "Classic Diner / Breakfast", category: "breakfast", location: "Waterloo", price: "$", map: "Highway+63+Diner+Waterloo+IA" },
+    { name: "Oh My Grill", cuisine: "Brunch / American", category: "breakfast", location: "Cedar Falls", price: "$$", map: "Oh+My+Grill+Cedar+Falls+IA" },
+    { name: "Patton Diner", cuisine: "Diner / Breakfast", category: "breakfast", location: "Cedar Falls", price: "$", map: "Patton+Diner+Cedar+Falls+IA" },
+    { name: "The Horny Toad American Bar & Grill", cuisine: "American / Bar & Grill", category: "american", location: "Cedar Falls", price: "$$", map: "Horny+Toad+American+Bar+Grill+Cedar+Falls+IA" },
 ];
 
 let activeFilter = "all";
