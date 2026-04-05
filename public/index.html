@@ -1516,10 +1516,11 @@ function revealWinner(winner) {
 
 let lastAction = null;
 let battleChampion = null;
+let battleSeenIds = new Set();
 function updateBattleDefendBtn() {
   const btn = document.getElementById('battle-defend-btn');
   if (!btn) return;
-  if (battleChampion) btn.removeAttribute('hidden');
+  if (battleChampion && lastAction === 'battle') btn.removeAttribute('hidden');
   else btn.setAttribute('hidden', '');
 }
 document.getElementById('pick-btn').addEventListener('click', () => {
@@ -1528,8 +1529,9 @@ document.getElementById('pick-btn').addEventListener('click', () => {
   const pickBtn = document.getElementById('pick-btn');
   document.getElementById('battle-area').innerHTML = '';
   battleChampion = null;
-  updateBattleDefendBtn();
+  battleSeenIds = new Set();
   lastAction = 'pick';
+  updateBattleDefendBtn();
   if (pool.length === 0) {
     result.innerHTML = `<div class="card"><h2>No restaurants match</h2><div class="cuisine">Try removing some filters.</div></div>`;
     openModal('action-modal');
@@ -1584,8 +1586,10 @@ document.getElementById('battle-btn').addEventListener('click', () => {
   const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
   document.getElementById('result').innerHTML = '';
   battleChampion = null;
-  updateBattleDefendBtn();
+  battleSeenIds = new Set();
+  shuffled.forEach(r => battleSeenIds.add(r.id));
   lastAction = 'battle';
+  updateBattleDefendBtn();
   openModal('action-modal');
   renderBattle(shuffled);
 });
@@ -1596,20 +1600,21 @@ document.getElementById('action-reroll-btn').addEventListener('click', () => {
   else document.getElementById('pick-btn').click();
 });
 
-// Keep the current battle winner and face two fresh challengers
+// Keep the current battle winner and face fresh (never-before-seen) challengers
 document.getElementById('battle-defend-btn').addEventListener('click', () => {
   if (!battleChampion) return;
-  const challengerPool = getFilteredPool().filter(r => r.id !== battleChampion.id);
+  const challengerPool = getFilteredPool().filter(r => !battleSeenIds.has(r.id));
   if (challengerPool.length < 1) {
-    toast('No challengers left for this filter');
+    toast('No fresh challengers left — true king of the hill 👑');
     return;
   }
   const picked = [...challengerPool].sort(() => Math.random() - 0.5).slice(0, Math.min(2, challengerPool.length));
+  picked.forEach(r => battleSeenIds.add(r.id));
   const champion = battleChampion;
   document.getElementById('result').innerHTML = '';
   battleChampion = null;
-  updateBattleDefendBtn();
   lastAction = 'battle';
+  updateBattleDefendBtn();
   renderBattle([champion, ...picked]);
 });
 
@@ -1617,7 +1622,7 @@ document.getElementById('battle-defend-btn').addEventListener('click', () => {
 (function wireActionModalReset() {
   const actionModalEl = document.getElementById('action-modal');
   if (!actionModalEl) return;
-  const reset = () => { battleChampion = null; updateBattleDefendBtn(); };
+  const reset = () => { battleChampion = null; battleSeenIds = new Set(); updateBattleDefendBtn(); };
   actionModalEl.addEventListener('click', (e) => {
     if (e.target === actionModalEl) reset();
   });
