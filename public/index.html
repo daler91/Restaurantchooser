@@ -41,8 +41,11 @@
   --outline-variant:      #dc9ca8;
   --shadow-primary:       0 20px 40px -12px rgba(177,32,45,0.08);
   --shadow-primary-lg:    0 30px 60px -18px rgba(177,32,45,0.18);
+  --shadow-layered:       0 1px 2px rgba(76,33,43,0.06), 0 12px 28px -10px rgba(177,32,45,0.14);
+  --shadow-layered-lg:    0 2px 4px rgba(76,33,43,0.08), 0 30px 60px -18px rgba(177,32,45,0.22);
   --gradient-cta:         linear-gradient(135deg, #b1202d 0%, #ff7575 100%);
   --glass-bg:             rgba(255,244,244,0.8);
+  --focus-ring:           color-mix(in oklab, #b1202d 55%, transparent);
 
   /* Legacy shim — keeps untouched rules working with new palette */
   --bg-1: var(--surface);
@@ -63,15 +66,41 @@
 html, body { min-height: 100%; }
 body {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, sans-serif;
-  background:
-    radial-gradient(ellipse 120% 60% at 90% 95%, rgba(69,242,185,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 100% 50% at 10% 5%, rgba(249,204,97,0.12) 0%, transparent 55%),
-    var(--surface);
-  background-attachment: fixed;
+  background: var(--surface);
   color: var(--on-surface);
   padding-bottom: 96px;
   min-height: 100vh;
+  position: relative;
   -webkit-font-smoothing: antialiased;
+}
+/* Drifting warm mesh gradient background */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: -2;
+  background:
+    radial-gradient(ellipse 55% 45% at 85% 95%, rgba(69,242,185,0.28) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 12% 8%,  rgba(249,204,97,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,117,117,0.14) 0%, transparent 65%),
+    var(--surface);
+  background-size: 180% 180%, 200% 200%, 160% 160%, auto;
+  background-position: 0% 0%, 100% 100%, 50% 50%, 0 0;
+  animation: meshDrift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes meshDrift {
+  0%   { background-position: 0% 0%, 100% 100%, 50% 50%, 0 0; }
+  50%  { background-position: 20% 15%, 75% 80%, 60% 40%, 0 0; }
+  100% { background-position: 10% 30%, 85% 70%, 40% 60%, 0 0; }
+}
+/* Subtle film grain overlay */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.12  0 0 0 0 0.17  0 0 0 0.8 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
 }
 
 /* Typography utilities */
@@ -148,10 +177,16 @@ main { max-width: 720px; margin: 0 auto; padding: 0.5rem 1rem 1rem; }
   font-size: 0.65rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.08em;
   transform: rotate(6deg);
+  transform-origin: bottom left;
   box-shadow: 0 6px 14px -4px rgba(116, 87, 0, 0.25);
   z-index: 2;
   pointer-events: none;
   white-space: nowrap;
+  animation: badgeWiggle 3.2s ease-in-out infinite;
+}
+@keyframes badgeWiggle {
+  0%, 100% { transform: rotate(4deg) translateY(0); }
+  50%      { transform: rotate(9deg) translateY(-2px); }
 }
 .cta-primary {
   display: inline-flex; align-items: center; gap: 0.6rem;
@@ -163,10 +198,28 @@ main { max-width: 720px; margin: 0 auto; padding: 0.5rem 1rem 1rem; }
   color: var(--on-primary);
   box-shadow: var(--shadow-primary), 0 8px 24px -8px rgba(177,32,45,0.35);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   transition: transform 0.15s, box-shadow 0.2s;
 }
+.cta-primary::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.45) 48%, transparent 66%);
+  transform: translateX(-120%);
+  pointer-events: none;
+  z-index: 1;
+}
+.cta-primary > * { position: relative; z-index: 2; }
 .cta-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-primary-lg), 0 14px 30px -8px rgba(177,32,45,0.45); }
-.cta-primary:active { transform: translateY(0); }
+.cta-primary:hover::after { animation: ctaShine 0.9s ease; }
+.cta-primary.spinning::after { animation: ctaShine 2.2s ease-in-out infinite; }
+@keyframes ctaShine {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+.cta-primary:active { transform: translateY(1px) scale(0.985); box-shadow: 0 4px 10px -4px rgba(177,32,45,0.4); }
 .cta-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .cta-primary.spinning { animation: ctaPulse 0.55s ease-in-out infinite alternate; }
 @keyframes ctaPulse {
@@ -207,11 +260,14 @@ main { max-width: 720px; margin: 0 auto; padding: 0.5rem 1rem 1rem; }
   color: var(--on-surface-variant);
   border-radius: 9999px;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
   font-family: inherit;
   font-size: 0.82rem; font-weight: 600;
-  transition: background 0.2s, color 0.2s, transform 0.1s;
+  transition: background 0.25s ease, color 0.25s ease, transform 0.12s ease, box-shadow 0.25s ease;
 }
 .filter-btn:hover { background: var(--surface-container-highest); }
+.filter-btn:active { transform: scale(0.94); }
 .filter-btn.active {
   background: var(--secondary);
   color: var(--on-secondary);
@@ -269,6 +325,8 @@ input.search-input:focus, select.search-input:focus {
   color: var(--on-secondary-container);
   border-radius: 9999px;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
   font-family: inherit; font-size: 0.85rem; font-weight: 700;
   transition: transform 0.15s, box-shadow 0.2s;
 }
@@ -276,6 +334,7 @@ input.search-input:focus, select.search-input:focus {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px -8px rgba(116,87,0,0.4);
 }
+.secondary-btn:active { transform: translateY(1px) scale(0.97); }
 
 /* Restaurant cards */
 #result { margin-top: 1.4rem; min-height: 180px; display: flex; align-items: center; justify-content: center; perspective: 800px; }
@@ -285,7 +344,10 @@ input.search-input:focus, select.search-input:focus {
   border-radius: 1.75rem;
   padding: 24px 32px 32px 24px;
   width: 100%; position: relative;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-layered);
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1), box-shadow 0.3s;
+  will-change: transform;
 }
 .card h2 {
   font-size: 1.5rem; margin-bottom: 0.4rem;
@@ -328,7 +390,7 @@ input.search-input:focus, select.search-input:focus {
   padding: 2rem; width: 100%;
   overflow: hidden; position: relative;
   border: none;
-  box-shadow: var(--shadow-primary-lg);
+  box-shadow: var(--shadow-layered-lg);
 }
 .spin-card .reel-name {
   font-size: 1.6rem; font-weight: 800; color: var(--on-surface);
@@ -338,7 +400,23 @@ input.search-input:focus, select.search-input:focus {
 
 .winner-card {
   animation: winnerReveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 30px 60px -18px rgba(177,32,45,0.35), 0 0 0 3px rgba(255,117,117,0.35);
+  box-shadow: var(--shadow-layered-lg), 0 30px 60px -18px rgba(177,32,45,0.35);
+}
+.winner-card::before {
+  content: "";
+  position: absolute; inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from 0deg, #b1202d, #f9cc61, #45f2b9, #ff7575, #b1202d);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: conicSpin 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes conicSpin {
+  to { transform: rotate(1turn); }
 }
 @keyframes winnerReveal {
   0% { opacity: 0; transform: scale(0.3) rotateX(40deg); }
@@ -365,11 +443,14 @@ input.search-input:focus, select.search-input:focus {
   border: none;
   border-radius: 1.25rem; padding: 1.1rem 1.2rem 1.2rem 1.1rem;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.2s;
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1), box-shadow 0.3s;
   position: relative;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-layered);
+  transform-style: preserve-3d;
+  will-change: transform;
 }
-.mini-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-primary-lg); }
+.mini-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-layered-lg); }
+.mini-card:active { transform: translateY(-1px) scale(0.99); }
 .mini-card .emoji { font-size: 1.5rem; margin-right: 0.4rem; }
 .mini-card h3 {
   font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; padding-right: 2rem;
@@ -387,11 +468,12 @@ input.search-input:focus, select.search-input:focus {
   border: none;
   border-radius: 1.5rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1), box-shadow 0.3s, opacity 0.3s;
   text-align: center;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-layered);
 }
-.battle-card:hover { transform: scale(1.02) translateY(-2px); box-shadow: var(--shadow-primary-lg); }
+.battle-card:hover { transform: scale(1.02) translateY(-2px); box-shadow: var(--shadow-layered-lg); }
+.battle-card:active { transform: scale(0.99); }
 .battle-card.eliminated { opacity: 0.3; transform: scale(0.9); pointer-events: none; }
 
 /* Stats charts */
@@ -406,7 +488,7 @@ input.search-input:focus, select.search-input:focus {
   border-radius: 1.25rem;
   padding: 1.2rem 1.3rem;
   margin-bottom: 0.9rem;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-layered);
 }
 .stat-box h4 {
   font-size: 0.72rem; color: var(--on-surface-variant);
@@ -435,8 +517,10 @@ input.search-input:focus, select.search-input:focus {
   border-radius: 1.25rem;
   margin-bottom: 0.6rem;
   gap: 0.5rem; flex-wrap: wrap;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-layered);
+  transition: transform 0.2s, box-shadow 0.3s;
 }
+.admin-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-layered-lg); }
 .admin-row .info { flex: 1; min-width: 200px; }
 .admin-row .info strong { display: block; margin-bottom: 0.25rem; color: var(--on-surface); }
 .admin-row .info small { color: var(--on-surface-variant); font-size: 0.8rem; }
@@ -467,7 +551,12 @@ input.search-input:focus, select.search-input:focus {
   padding: 1.8rem 1.8rem 1.6rem;
   max-width: 500px; width: 100%;
   max-height: 90vh; overflow-y: auto;
-  box-shadow: var(--shadow-primary-lg);
+  box-shadow: var(--shadow-layered-lg);
+  animation: modalIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
 }
 .modal h3 {
   margin-bottom: 1.2rem;
@@ -530,6 +619,22 @@ nav.tab-nav {
   padding: 0.5rem 0.5rem;
   z-index: 50;
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  --active-index: 0;
+  --tab-count: 5;
+}
+nav.tab-nav::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem; bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  left: 0.5rem;
+  width: calc((100% - 1rem) / var(--tab-count));
+  border-radius: 1.25rem;
+  background: var(--surface-container-low);
+  box-shadow: 0 6px 18px -10px rgba(177,32,45,0.35);
+  transform: translateX(calc(var(--active-index) * 100%));
+  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.35);
+  pointer-events: none;
+  z-index: 0;
 }
 nav.tab-nav button {
   flex: 1;
@@ -545,13 +650,19 @@ nav.tab-nav button {
   display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
   min-height: 56px;
   border-radius: 1.25rem;
-  transition: color 0.2s, background 0.2s;
+  position: relative;
+  z-index: 1;
+  transition: color 0.25s ease, transform 0.2s ease;
 }
-nav.tab-nav button .icon { font-size: 1.35rem; }
+nav.tab-nav button .icon {
+  font-size: 1.35rem;
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
 nav.tab-nav button.active {
   color: var(--primary);
-  background: var(--surface-container-low);
 }
+nav.tab-nav button.active .icon { transform: scale(1.15) translateY(-2px); }
+nav.tab-nav button:active { transform: scale(0.95); }
 nav.tab-nav button.hidden { display: none; }
 
 /* Toast */
@@ -559,22 +670,156 @@ nav.tab-nav button.hidden { display: none; }
 .toast {
   background: var(--surface-container-lowest);
   color: var(--on-surface);
-  padding: 0.85rem 1.3rem;
+  padding: 0.85rem 1.3rem 0.85rem 1.1rem;
   border-radius: 9999px;
   border: none;
+  border-left: 4px solid var(--on-surface-faint);
   font-size: 0.85rem; font-weight: 600;
-  box-shadow: var(--shadow-primary-lg);
-  animation: toastIn 0.3s ease;
+  box-shadow: var(--shadow-layered-lg);
+  animation: toastIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  max-width: calc(100vw - 2rem);
 }
-@keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.toast .toast-icon { font-size: 1rem; line-height: 1; }
+.toast.success { border-left-color: var(--tertiary); }
+.toast.error   { border-left-color: var(--primary); }
+.toast.info    { border-left-color: var(--secondary-container); }
+.toast.leaving { animation: toastOut 0.25s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(10px) scale(0.96); } }
 
-.empty-state { text-align: center; padding: 3rem 1rem; color: var(--on-surface-variant); }
-.empty-state .icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.empty-state {
+  text-align: center; padding: 3.5rem 1rem;
+  color: var(--on-surface-variant);
+}
+.empty-state .icon {
+  font-size: 3.4rem; margin-bottom: 0.6rem;
+  display: inline-block;
+  animation: emptyFloat 3.5s ease-in-out infinite;
+}
+.empty-state .title {
+  font-size: 1.1rem; font-weight: 700; color: var(--on-surface);
+  margin-bottom: 0.3rem; letter-spacing: -0.01em;
+}
+@keyframes emptyFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
 
 .status-line {
   font-size: 0.72rem; color: var(--on-surface-variant);
   text-align: center; margin: 0.4rem 0 0.8rem;
   text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+}
+
+/* Section divider */
+.section-divider {
+  height: 1px; border: 0;
+  margin: 1.6rem 0 0.6rem;
+  background: linear-gradient(90deg, transparent, var(--outline-variant), transparent);
+  opacity: 0.55;
+}
+
+/* Focus-visible accessibility rings */
+:focus { outline: none; }
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+.modal input:focus-visible,
+.modal textarea:focus-visible,
+.modal select:focus-visible { outline-offset: 2px; border-radius: 1rem; }
+
+/* Scroll-reveal stagger */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  transition-delay: calc(var(--i, 0) * 55ms);
+}
+.reveal.in-view { opacity: 1; transform: none; }
+
+/* Pointer tilt support (mouse only) */
+@media (pointer: fine) {
+  .tilt { transition: transform 0.12s ease-out, box-shadow 0.25s; }
+  .tilt.tilting { transition: none; }
+}
+
+/* Ripple */
+.ripple-host { position: relative; overflow: hidden; }
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  background: rgba(255,255,255,0.45);
+  pointer-events: none;
+  animation: rippleOut 0.6s ease-out forwards;
+  z-index: 3;
+  mix-blend-mode: overlay;
+}
+.filter-btn .ripple,
+.secondary-btn .ripple { background: rgba(177,32,45,0.22); mix-blend-mode: normal; }
+@keyframes rippleOut {
+  to { transform: scale(3); opacity: 0; }
+}
+
+/* Skeleton loaders */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-container-low);
+  border-radius: 1.25rem;
+}
+.skeleton::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.55) 50%,
+    transparent 100%);
+  transform: translateX(-100%);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  to { transform: translateX(100%); }
+}
+.skeleton-card {
+  height: 112px;
+  margin-bottom: 0;
+}
+.skeleton-stat { height: 92px; margin-bottom: 0.9rem; }
+
+/* Fav heart burst */
+.fav-heart.bursting {
+  animation: heartBurst 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+@keyframes heartBurst {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.5) rotate(-6deg); }
+  70%  { transform: scale(0.92) rotate(3deg); }
+  100% { transform: scale(1.15); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  body::after { animation: none; }
+  .reveal { opacity: 1; transform: none; }
+  .winner-card::before { display: none; }
+  .cta-primary::after { display: none; }
+  .cta-badge { animation: none; }
+  .empty-state .icon { animation: none; }
+  .tilt { transform: none !important; }
 }
 </style>
 </head>
@@ -674,8 +919,8 @@ nav.tab-nav button.hidden { display: none; }
     <div class="card-grid" id="favorites-grid"></div>
     <div id="favorites-empty" class="empty-state" style="display:none;">
       <div class="icon">💔</div>
-      <div>No favorites yet.</div>
-      <div style="font-size:0.85rem; margin-top:0.4rem;">Tap the heart on any restaurant to save it here.</div>
+      <div class="title">No favorites yet</div>
+      <div style="font-size:0.85rem; margin-top:0.2rem;">Tap the heart on any restaurant to save it here.</div>
     </div>
   </section>
 
@@ -871,10 +1116,19 @@ async function loadRestaurants() {
 }
 
 // ──────────── Tabs ────────────
+function updateTabIndicator() {
+  const nav = document.getElementById('tab-nav');
+  if (!nav) return;
+  const btns = Array.from(nav.querySelectorAll('button')).filter(b => !b.classList.contains('hidden'));
+  nav.style.setProperty('--tab-count', btns.length);
+  const idx = btns.findIndex(b => b.classList.contains('active'));
+  nav.style.setProperty('--active-index', idx < 0 ? 0 : idx);
+}
 function switchTab(name) {
   document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   document.querySelectorAll('nav.tab-nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  updateTabIndicator();
   if (name === 'favorites') renderFavorites();
   if (name === 'stats') renderStats();
   if (name === 'browse') renderBrowse();
@@ -883,15 +1137,28 @@ function switchTab(name) {
 document.querySelectorAll('nav.tab-nav button').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
+updateTabIndicator();
 
 // ──────────── Toast ────────────
-function toast(msg) {
+const TOAST_ICONS = { success: '✓', error: '⚠', info: 'ℹ' };
+function toast(msg, type) {
   const c = document.getElementById('toast-container');
   const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
+  const inferred = type || (/fail|error|required|invalid/i.test(msg) ? 'error'
+                          : /thanks|success|approved|updated|created|saved|deleted/i.test(msg) ? 'success'
+                          : '');
+  el.className = 'toast' + (inferred ? ' ' + inferred : '');
+  if (TOAST_ICONS[inferred]) {
+    el.innerHTML = `<span class="toast-icon">${TOAST_ICONS[inferred]}</span><span></span>`;
+    el.lastElementChild.textContent = msg;
+  } else {
+    el.textContent = msg;
+  }
   c.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 260);
+  }, 2800);
 }
 
 // ──────────── Modals ────────────
@@ -913,7 +1180,7 @@ function renderCard(r, opts = {}) {
   const ratingHtml = r.rating > 0
     ? `<div class="rating">${starsFor(r.rating)}</div>`
     : '';
-  return `<div class="card ${opts.winner ? 'winner-card' : ''}" data-id="${r.id}">
+  return `<div class="card tilt ripple-host ${opts.winner ? 'winner-card' : ''}" data-id="${r.id}">
     <button class="fav-heart ${isFav ? 'faved' : ''}" data-fav-id="${r.id}">${isFav ? '❤' : '♡'}</button>
     <h2>${emoji} ${escapeHtml(r.name)}</h2>
     <div class="cuisine">${escapeHtml(r.cuisine)}</div>
@@ -925,9 +1192,9 @@ function renderCard(r, opts = {}) {
   </div>`;
 }
 
-function renderMiniCard(r) {
+function renderMiniCard(r, idx = 0) {
   const isFav = state.favorites.includes(r.id);
-  return `<div class="mini-card" data-id="${r.id}">
+  return `<div class="mini-card tilt reveal" style="--i:${idx}" data-id="${r.id}">
     <button class="fav-heart ${isFav ? 'faved' : ''}" data-fav-id="${r.id}">${isFav ? '❤' : '♡'}</button>
     <h3><span class="emoji">${emojiFor(r)}</span>${escapeHtml(r.name)}</h3>
     <div class="cuisine">${escapeHtml(r.cuisine)}</div>
@@ -1192,7 +1459,7 @@ function renderBattle(contestants) {
     <h3 class="section-title" style="text-align:center;">⚔️ Eliminate one</h3>
     <div class="battle-grid">
       ${contestants.map((r, i) => `
-        <div class="battle-card" data-battle-idx="${i}">
+        <div class="battle-card reveal" style="--i:${i}" data-battle-idx="${i}">
           <div style="font-size:2rem;">${emojiFor(r)}</div>
           <strong>${escapeHtml(r.name)}</strong>
           <div style="font-size:0.8rem; color:var(--text-dim); margin-top:0.3rem;">${escapeHtml(r.cuisine)} · ${r.price}</div>
@@ -1201,6 +1468,7 @@ function renderBattle(contestants) {
     </div>
     <div style="text-align:center; margin-top:0.8rem; font-size:0.85rem; color:var(--text-dim);">Tap the one to eliminate</div>
   `;
+  observeReveals(area);
   area.querySelectorAll('.battle-card').forEach(card => {
     card.addEventListener('click', () => {
       const idx = parseInt(card.dataset.battleIdx, 10);
@@ -1233,9 +1501,13 @@ function getBrowseList() {
 
 function renderBrowse() {
   const grid = document.getElementById('browse-grid');
+  if (!state.restaurants.length) { grid.innerHTML = skeletonGrid(6); return; }
   const all = getBrowseList();
   const shown = all.slice(0, (state.browsePage + 1) * BROWSE_PAGE_SIZE);
-  grid.innerHTML = shown.map(renderMiniCard).join('') || '<div class="empty-state">No restaurants.</div>';
+  grid.innerHTML = shown.length
+    ? shown.map((r, i) => renderMiniCard(r, i % 12)).join('')
+    : '<div class="empty-state"><div class="icon">🍽️</div><div class="title">No matches</div><div style="font-size:0.85rem;">Try a different search or cuisine.</div></div>';
+  observeReveals(grid);
   document.getElementById('load-more-btn').style.display = shown.length < all.length ? 'inline-block' : 'none';
 }
 document.getElementById('browse-search').addEventListener('input', (e) => {
@@ -1278,7 +1550,8 @@ function renderFavorites() {
   const favs = state.restaurants.filter(r => state.favorites.includes(r.id));
   if (favs.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  grid.innerHTML = favs.map(renderMiniCard).join('');
+  grid.innerHTML = favs.map((r, i) => renderMiniCard(r, i)).join('');
+  observeReveals(grid);
 }
 
 // ──────────── Stats Tab ────────────
@@ -1286,7 +1559,7 @@ function renderStats() {
   const c = document.getElementById('stats-content');
   const hist = state.history;
   if (hist.length === 0) {
-    c.innerHTML = `<div class="empty-state"><div class="icon">📊</div><div>No picks yet.</div><div style="font-size:0.85rem; margin-top:0.4rem;">Pick a restaurant to see your stats!</div></div>`;
+    c.innerHTML = `<div class="empty-state"><div class="icon">📊</div><div class="title">No picks yet</div><div style="font-size:0.85rem;">Pick a restaurant to see your stats!</div></div>`;
     return;
   }
   const byId = {};
@@ -1323,16 +1596,17 @@ function renderStats() {
   `).join('');
 
   c.innerHTML = `
-    <div class="stat-box"><h4>Total Picks</h4><div class="big-num">${hist.length}</div></div>
-    <div class="stat-box"><h4>Unique Restaurants</h4><div class="big-num">${uniqueRestaurants}</div></div>
-    <div class="stat-box"><h4>Favorites Saved</h4><div class="big-num">${state.favorites.length}</div></div>
-    ${topCuisine ? `<div class="stat-box"><h4>Top Cuisine</h4><div class="big-num">${(CATEGORIES.find(c => c.key === topCuisine[0]) || {label: topCuisine[0]}).label}</div></div>` : ''}
-    <div class="stat-box"><h4>By Cuisine</h4>${cuisineRows}</div>
-    <div class="stat-box"><h4>By Price</h4>${priceRows}</div>
+    <div class="stat-box reveal" style="--i:0"><h4>Total Picks</h4><div class="big-num">${hist.length}</div></div>
+    <div class="stat-box reveal" style="--i:1"><h4>Unique Restaurants</h4><div class="big-num">${uniqueRestaurants}</div></div>
+    <div class="stat-box reveal" style="--i:2"><h4>Favorites Saved</h4><div class="big-num">${state.favorites.length}</div></div>
+    ${topCuisine ? `<div class="stat-box reveal" style="--i:3"><h4>Top Cuisine</h4><div class="big-num">${(CATEGORIES.find(c => c.key === topCuisine[0]) || {label: topCuisine[0]}).label}</div></div>` : ''}
+    <div class="stat-box reveal" style="--i:4"><h4>By Cuisine</h4>${cuisineRows}</div>
+    <div class="stat-box reveal" style="--i:5"><h4>By Price</h4>${priceRows}</div>
     <div style="text-align:center; margin-top:1rem;">
       <button class="secondary-btn" id="clear-history-btn">Clear History</button>
     </div>
   `;
+  observeReveals(c);
   const clearBtn = document.getElementById('clear-history-btn');
   if (clearBtn) clearBtn.addEventListener('click', () => {
     if (!confirm('Clear all pick history?')) return;
@@ -1413,19 +1687,20 @@ function renderAdminRestaurants() {
   const c = document.getElementById('admin-restaurants');
   const q = (document.getElementById('admin-search').value || '').toLowerCase();
   const list = state.restaurants.filter(r => !q || r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q));
-  c.innerHTML = list.slice(0, 50).map(r => `
-    <div class="admin-row">
+  c.innerHTML = list.slice(0, 50).map((r, i) => `
+    <div class="admin-row reveal" style="--i:${i % 10}">
       <div class="info">
         <strong>${escapeHtml(r.name)}</strong>
         <small>${escapeHtml(r.cuisine)} · ${r.price} · ${escapeHtml(r.address)}</small>
       </div>
       <div class="actions">
-        <button class="btn-edit" data-edit="${r.id}">Edit</button>
-        <button class="btn-delete" data-delete="${r.id}">Delete</button>
+        <button class="btn-edit ripple-host" data-edit="${r.id}">Edit</button>
+        <button class="btn-delete ripple-host" data-delete="${r.id}">Delete</button>
       </div>
     </div>
   `).join('');
   if (list.length > 50) c.innerHTML += `<div style="text-align:center; color:var(--text-faint); font-size:0.85rem; margin-top:0.5rem;">Showing first 50 of ${list.length}. Use search to narrow.</div>`;
+  observeReveals(c);
   c.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openEditModal(parseInt(b.dataset.edit, 10))));
   c.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('Delete this restaurant?')) return;
@@ -1471,9 +1746,110 @@ document.getElementById('ed-submit').addEventListener('click', async () => {
   } catch { toast('Failed'); }
 });
 
+// ──────────── Modern UX: reveal, tilt, ripple, skeletons ────────────
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+// Skeleton helper
+function skeletonGrid(count) {
+  return Array.from({ length: count }, () => '<div class="skeleton skeleton-card"></div>').join('');
+}
+
+// IntersectionObserver-driven scroll reveal
+const revealObserver = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      revealObserver.unobserve(entry.target);
+    }
+  }
+}, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 }) : null;
+
+function observeReveals(root) {
+  if (!revealObserver) {
+    (root || document).querySelectorAll('.reveal').forEach(el => el.classList.add('in-view'));
+    return;
+  }
+  (root || document).querySelectorAll('.reveal:not(.in-view)').forEach(el => revealObserver.observe(el));
+}
+
+// Pointer tilt for cards (mouse only, not reduced-motion)
+if (finePointer && !prefersReducedMotion) {
+  const MAX_TILT = 6;
+  let rafId = null;
+  let pending = null;
+  const applyTilt = () => {
+    rafId = null;
+    if (!pending) return;
+    const { el, rx, ry } = pending;
+    el.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-2px)`;
+  };
+  document.addEventListener('pointermove', (e) => {
+    const el = e.target.closest('.tilt');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const ry = (x - 0.5) * 2 * MAX_TILT;
+    const rx = (0.5 - y) * 2 * MAX_TILT;
+    el.classList.add('tilting');
+    pending = { el, rx, ry };
+    if (rafId == null) rafId = requestAnimationFrame(applyTilt);
+  });
+  document.addEventListener('pointerleave', (e) => {
+    const el = e.target && e.target.closest ? e.target.closest('.tilt') : null;
+    if (el) { el.style.transform = ''; el.classList.remove('tilting'); }
+  }, true);
+  document.addEventListener('pointerout', (e) => {
+    if (e.relatedTarget) return;
+    document.querySelectorAll('.tilt.tilting').forEach(el => {
+      el.style.transform = ''; el.classList.remove('tilting');
+    });
+  });
+}
+
+// Ripple on press (buttons + ripple-host elements)
+document.addEventListener('pointerdown', (e) => {
+  if (prefersReducedMotion) return;
+  const host = e.target.closest(
+    '.cta-primary, .secondary-btn, .filter-btn, .btn-approve, .btn-reject, .btn-delete, .btn-edit, .ripple-host'
+  );
+  if (!host || host.disabled) return;
+  const rect = host.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 1.1;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  r.style.width = r.style.height = size + 'px';
+  r.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  r.style.top  = (e.clientY - rect.top  - size / 2) + 'px';
+  // Ensure host can contain the ripple
+  const prevPos = getComputedStyle(host).position;
+  if (prevPos === 'static') host.style.position = 'relative';
+  host.style.overflow = 'hidden';
+  host.appendChild(r);
+  setTimeout(() => r.remove(), 650);
+});
+
+// Fav heart burst: hook into existing delegated click handler via classList watch
+document.addEventListener('click', (e) => {
+  const fav = e.target.closest('.fav-heart[data-fav-id]');
+  if (!fav) return;
+  // Defer to next frame so toggleFavorite's class change lands first
+  requestAnimationFrame(() => {
+    if (fav.classList.contains('faved')) {
+      fav.classList.remove('bursting');
+      // force reflow to restart animation
+      void fav.offsetWidth;
+      fav.classList.add('bursting');
+      setTimeout(() => fav.classList.remove('bursting'), 550);
+    }
+  });
+}, true);
+
 // ──────────── Init ────────────
 initSuggestTags();
 initEditTags();
+observeReveals();
 renderRecentPicks();
 if (state.adminPin) {
   // verify still valid
