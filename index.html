@@ -165,10 +165,54 @@ const apiStatus = document.getElementById("api-status");
 const apiKeySection = document.getElementById("api-key-section");
 const countEl = document.getElementById("restaurant-count");
 
-// If we already have a key saved, auto-load
+// Hardcoded fallback — Cedar Valley foodie favorites
+const FALLBACK_RESTAURANTS = [
+    { name: "The Brown Bottle", cuisine: "Italian-American", types: ["italian", "restaurant"], address: "1111 Center St, Cedar Falls, IA", rating: 4.5, totalRatings: 900, price: "$$", placeId: "", map: "The+Brown+Bottle+1111+Center+St+Cedar+Falls+IA" },
+    { name: "Galleria de Paco", cuisine: "European-American Fine Dining", types: ["american", "restaurant"], address: "622 Commercial St, Waterloo, IA", rating: 4.6, totalRatings: 350, price: "$$$", placeId: "", map: "Galleria+de+Paco+622+Commercial+St+Waterloo+IA" },
+    { name: "Montage", cuisine: "American / Creative", types: ["american", "restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 400, price: "$$", placeId: "", map: "Montage+Cedar+Falls+IA" },
+    { name: "SingleSpeed Brewing Co", cuisine: "Brewpub / American", types: ["bar", "restaurant"], address: "325 Commercial St, Waterloo, IA", rating: 4.5, totalRatings: 600, price: "$$", placeId: "", map: "SingleSpeed+Brewing+325+Commercial+St+Waterloo+IA" },
+    { name: "Whiskey Road Tavern & Grill", cuisine: "American / Bar & Grill", types: ["bar", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 500, price: "$$", placeId: "", map: "Whiskey+Road+Tavern+Grill+Cedar+Falls+IA" },
+    { name: "George's Local", cuisine: "American / Farm-to-Table", types: ["american", "restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 300, price: "$$", placeId: "", map: "Georges+Local+Cedar+Falls+IA" },
+    { name: "1850 Patio & Grill", cuisine: "American / Grilled", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 250, price: "$$", placeId: "", map: "1850+Patio+Grill+Waterloo+IA" },
+    { name: "Iowa PrimeHouse", cuisine: "Steakhouse / Local", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.7, totalRatings: 200, price: "$$$", placeId: "", map: "Iowa+PrimeHouse+Waterloo+IA" },
+    { name: "Rodney's Kitchen", cuisine: "American Comfort Food", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 180, price: "$$", placeId: "", map: "Rodneys+Kitchen+Waterloo+IA" },
+    { name: "King Bucks", cuisine: "Gourmet Burgers", types: ["american", "restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 450, price: "$$", placeId: "", map: "King+Bucks+Cedar+Falls+IA" },
+    { name: "Peppers Grill & Sports Bar", cuisine: "Burgers / Bar & Grill", types: ["bar", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 500, price: "$$", placeId: "", map: "Peppers+Grill+Cedar+Falls+IA" },
+    { name: "Southtown Restaurant & Bar", cuisine: "Burgers / Tenderloin", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 300, price: "$", placeId: "", map: "Southtown+Restaurant+Bar+Waterloo+IA" },
+    { name: "Mac's Drive-In", cuisine: "Classic Drive-In / Burgers", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 350, price: "$", placeId: "", map: "Macs+Drive+In+Waterloo+IA" },
+    { name: "Starbeck's Smokehouse", cuisine: "BBQ / Smoked Meats", types: ["restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 280, price: "$$", placeId: "", map: "Starbecks+Smokehouse+Waterloo+IA" },
+    { name: "Three Amigos Family Restaurant", cuisine: "Authentic Mexican", types: ["mexican", "restaurant"], address: "Waterloo, IA", rating: 4.3, totalRatings: 400, price: "$", placeId: "", map: "Three+Amigos+Family+Restaurant+Waterloo+IA" },
+    { name: "Los Cabos Mexican Grill", cuisine: "Mexican", types: ["mexican", "restaurant"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 350, price: "$$", placeId: "", map: "Los+Cabos+Mexican+Grill+Cedar+Falls+IA" },
+    { name: "Rudy's Tacos", cuisine: "Tex-Mex", types: ["mexican", "restaurant"], address: "Waterloo, IA", rating: 4.3, totalRatings: 500, price: "$", placeId: "", map: "Rudys+Tacos+Waterloo+IA" },
+    { name: "Thai Bistro", cuisine: "Thai", types: ["restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 300, price: "$$", placeId: "", map: "Thai+Bistro+Cedar+Falls+IA" },
+    { name: "Annie's Vietnamese Sandwiches", cuisine: "Vietnamese / Banh Mi", types: ["restaurant"], address: "Waterloo, IA", rating: 4.6, totalRatings: 150, price: "$", placeId: "", map: "Annies+Vietnamese+Sandwiches+Waterloo+IA" },
+    { name: "Brown Bottle Waterloo", cuisine: "Italian", types: ["italian", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 700, price: "$$", placeId: "", map: "Brown+Bottle+Waterloo+IA" },
+    { name: "Basal Pizza", cuisine: "Artisan Pizza", types: ["pizza", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 200, price: "$$", placeId: "", map: "Basal+Pizza+Waterloo+IA" },
+    { name: "Tony's La Pizzeria", cuisine: "Pizza / Italian", types: ["pizza", "italian", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 350, price: "$$", placeId: "", map: "Tonys+La+Pizzeria+Waterloo+IA" },
+    { name: "Morg's", cuisine: "Classic Diner / Breakfast", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 400, price: "$", placeId: "", map: "Morgs+Waterloo+IA" },
+    { name: "Newton's Paradise Cafe", cuisine: "Breakfast / Brunch", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 250, price: "$", placeId: "", map: "Newtons+Paradise+Cafe+Waterloo+IA" },
+    { name: "J's Homestyle Cooking (Mama J's)", cuisine: "Breakfast / Comfort Food", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.6, totalRatings: 300, price: "$", placeId: "", map: "Js+Homestyle+Cooking+Waterloo+IA" },
+    { name: "Highway 63 Diner", cuisine: "Classic Diner / Breakfast", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 200, price: "$", placeId: "", map: "Highway+63+Diner+Waterloo+IA" },
+    { name: "Oh My Grill", cuisine: "Brunch / American", types: ["cafe", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 250, price: "$$", placeId: "", map: "Oh+My+Grill+Cedar+Falls+IA" },
+    { name: "Patton Diner", cuisine: "Diner / Breakfast", types: ["cafe", "restaurant"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 200, price: "$", placeId: "", map: "Patton+Diner+Cedar+Falls+IA" },
+    { name: "The Horny Toad American Bar & Grill", cuisine: "American / Bar & Grill", types: ["bar", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 350, price: "$$", placeId: "", map: "Horny+Toad+American+Bar+Grill+Cedar+Falls+IA" },
+];
+
+function useFallback() {
+    restaurants = [...FALLBACK_RESTAURANTS];
+    apiStatus.textContent = "Using local favorites (add API key for live data)";
+    apiStatus.className = "status";
+    pickBtn.disabled = false;
+    pickBtn.textContent = "Pick a Restaurant!";
+    updateCount();
+}
+
+// If we already have a key saved, try live data; otherwise use fallback
 if (apiKey) {
     apiKeyInput.value = "••••••••••••••••";
     loadRestaurants();
+} else {
+    useFallback();
 }
 
 apiKeyBtn.addEventListener("click", () => {
@@ -217,6 +261,9 @@ function starsFor(rating) {
 }
 
 function renderCard(r) {
+    const mapsUrl = r.placeId
+        ? `https://www.google.com/maps/place/?q=place_id:${r.placeId}`
+        : `https://www.google.com/maps/search/${r.map}`;
     return `<div class="card">
         <h2>${r.name}</h2>
         <div class="cuisine">${r.cuisine}</div>
@@ -224,7 +271,7 @@ function renderCard(r) {
         <div class="rating">${starsFor(r.rating)}</div>
         <div class="price">${r.price}</div>
         <div class="total-ratings">${r.totalRatings} reviews</div>
-        <a href="https://www.google.com/maps/place/?q=place_id:${r.placeId}" target="_blank" rel="noopener">Open in Google Maps</a>
+        <a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a>
     </div>`;
 }
 
@@ -261,9 +308,9 @@ async function loadRestaurants() {
         try {
             await loadGoogleMapsScript();
         } catch (err) {
-            apiStatus.textContent = "Failed to load Google Maps API. Check your API key.";
+            apiStatus.textContent = "Google API failed — falling back to local favorites.";
             apiStatus.className = "status error";
-            pickBtn.textContent = "Pick a Restaurant!";
+            useFallback();
             return;
         }
     }
@@ -316,9 +363,9 @@ async function loadRestaurants() {
         pickBtn.textContent = "Pick a Restaurant!";
         updateCount();
     } else {
-        apiStatus.textContent = "No restaurants found. Check your API key and ensure Places API is enabled.";
+        apiStatus.textContent = "API returned no results — falling back to local favorites.";
         apiStatus.className = "status error";
-        pickBtn.textContent = "Pick a Restaurant!";
+        useFallback();
     }
 }
 
