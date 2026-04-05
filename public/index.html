@@ -213,7 +213,7 @@ const FALLBACK_RESTAURANTS = [
   {n:"Jameson's Public House",c:"Irish Pub / American",t:["bar","american"],a:"Waterloo",p:"$$"},
   {n:"Gilmore's Pub",c:"Pub / American",t:["bar","american"],a:"Waterloo",p:"$$"},
   {n:"Half Pint Saloon",c:"Bar / American",t:["bar","american"],a:"Waterloo",p:"$"},
-  {n:"Kingpin Bar & Grill",c:"Bar & Grill",t:["bar","american"],a:"Waterloo",p:"$$"},
+  {n:"Kingpin Social",c:"Bar & Grill / Entertainment",t:["bar","american"],a:"University Ave, Waterloo",p:"$$"},
   {n:"Tipsy'z Bar And Grill",c:"Bar & Grill",t:["bar","american"],a:"Waterloo",p:"$$"},
   {n:"Screaming Eagle",c:"American",t:["american","bar"],a:"Waterloo",p:"$$"},
   {n:"Applebee's",c:"American Chain / Bar & Grill",t:["bar","american"],a:"2780 Crossroads Blvd, Waterloo",p:"$$"},
@@ -223,10 +223,13 @@ const FALLBACK_RESTAURANTS = [
   {n:"GreenHouse Kitchen",c:"Healthy / Clean Eating",t:["american","breakfast"],a:"Cedar Falls",p:"$$"},
   {n:"Medo's",c:"American / Mediterranean",t:["american"],a:"Waterloo",p:"$$"},
   {n:"Becker's on the Avenue",c:"American / Bar & Grill",t:["bar","american"],a:"Cedar Falls",p:"$$"},
-  {n:"Doughy's",c:"American / Comfort Food",t:["american"],a:"Waterloo",p:"$"},
+  {n:"Doughy Joey's Peetza Joint",c:"Pizza",t:["pizza","american"],a:"300 W 4th St, Waterloo",p:"$$"},
   {n:"The Brass Tap",c:"Craft Beer / Gastropub",t:["bar","american"],a:"421 Main St, Cedar Falls",p:"$$"},
   {n:"Hy-Vee Market Grille",c:"American / Breakfast / Full Bar",t:["american","breakfast"],a:"Cedar Falls",p:"$$"},
   {n:"Pick Up N Go Soul Food",c:"Soul Food",t:["american"],a:"Waterloo",p:"$"},
+  {n:"LJ's Neighborhood Bar & Grill",c:"American / Pizza",t:["american","bar"],a:"3550 Kimball Ave, Waterloo",p:"$$"},
+  {n:"Locals Bar & Grill",c:"American",t:["bar","american"],a:"229 E 4th St, Waterloo",p:"$$"},
+  {n:"LongHorn Steakhouse",c:"Steakhouse Chain",t:["fine","american"],a:"E San Marnan Dr, Waterloo",p:"$$$"},
   {n:"Mama Nick's Circle Pizzeria",c:"Pizza / Italian / Burgers",t:["pizza","american"],a:"Waterloo",p:"$$"},
   {n:"Tuscany Grill",c:"Italian / American (new)",t:["american"],a:"Waterloo",p:"$$"},
 
@@ -263,6 +266,9 @@ const FALLBACK_RESTAURANTS = [
   {n:"Amigos Mexican Cuisine & Cantina",c:"Mexican",t:["mexican"],a:"Cedar Falls",p:"$$"},
   {n:"Los Reyes / Taqueria Los Reyes",c:"Authentic Mexican (4.7 rated)",t:["mexican"],a:"403 Franklin St, Waterloo",p:"$"},
   {n:"Tortas y Tacos DelValle",c:"Mexican / Tortas & Tacos",t:["mexican"],a:"602 Broadway St, Waterloo",p:"$"},
+  {n:"D'Leon's Taco Rico",c:"Mexican (open 6am-11pm)",t:["mexican"],a:"109 Jefferson St, Waterloo",p:"$"},
+  {n:"Taquiera La Placita",c:"Mexican Taqueria",t:["mexican"],a:"Waterloo",p:"$"},
+  {n:"La Michoacana",c:"Mexican Market / Restaurant",t:["mexican"],a:"Lafayette St, Waterloo",p:"$"},
   {n:"Cancun Mexican Bar & Grill",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$$"},
   {n:"Mi Mexico",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
   {n:"Casa De Oro",c:"Mexican",t:["mexican"],a:"Waterloo",p:"$"},
@@ -288,6 +294,7 @@ const FALLBACK_RESTAURANTS = [
   {n:"Pho & Grill",c:"Vietnamese / Pho",t:["asian"],a:"Waterloo",p:"$"},
   {n:"Hibachi Sushi Buffet",c:"Chinese / Sushi / Hibachi Buffet",t:["asian"],a:"Waterloo",p:"$$"},
   {n:"Izumi Sushi & Hibachi",c:"Japanese / Sushi / Hibachi AYCE",t:["asian"],a:"941 E San Marnan Dr, Waterloo",p:"$$"},
+  {n:"Mandarin Spice Asian Grill",c:"Asian Grill",t:["asian"],a:"E San Marnan Dr, Waterloo",p:"$$"},
 
   // ══════════ PIZZA ══════════
   {n:"Basal Pizza",c:"Neapolitan & Detroit-Style Pizza",t:["pizza"],a:"Waterloo",p:"$$"},
@@ -303,6 +310,7 @@ const FALLBACK_RESTAURANTS = [
   {n:"Pizza Hut",c:"Pizza Chain",t:["pizza","fast"],a:"Waterloo",p:"$"},
   {n:"Toppers Pizza",c:"Pizza Delivery",t:["pizza"],a:"Cedar Falls",p:"$"},
   {n:"Marco's Pizza",c:"Pizza Chain (Fresh Dough Daily)",t:["pizza","fast"],a:"3032 Ansborough Ave, Waterloo",p:"$"},
+  {n:"Geno's Pizza",c:"Pizza",t:["pizza"],a:"San Marnan area, Waterloo",p:"$"},
 
   // ══════════ BREAKFAST / BRUNCH ══════════
   {n:"Tata Yaya",c:"Crepes / Waffles / Souffle Pancakes",t:["breakfast"],a:"Downtown Cedar Falls",p:"$$"},
@@ -331,6 +339,11 @@ const FALLBACK_RESTAURANTS = [
   {n:"Panera Bread",c:"Bakery-Cafe / Sandwiches",t:["coffee","fast"],a:"Cedar Falls & Waterloo",p:"$$"},
   {n:"Bambino's",c:"Custom Cakes / Bakery",t:["coffee"],a:"Waterloo",p:"$$"},
   {n:"Scooter's Coffee",c:"Coffee / Drive-Thru",t:["coffee"],a:"Waterloo / Cedar Falls",p:"$"},
+  {n:"Caribou Coffee",c:"Coffee / Drive-Thru",t:["coffee"],a:"University Ave, Waterloo",p:"$"},
+  {n:"Sidecar Coffee",c:"Coffee Shop",t:["coffee"],a:"21 W Jefferson St, Waterloo",p:"$"},
+  {n:"Fat Cup",c:"Coffee Shop",t:["coffee"],a:"Waterloo",p:"$"},
+  {n:"Cabin Coffee Co",c:"Coffee / Drive-Thru",t:["coffee"],a:"Kimball Ave, Waterloo",p:"$"},
+  {n:"Verve Kombucha Kitchen & Bar",c:"Kombucha Bar / Kitchen",t:["bar","coffee"],a:"327 W 3rd St, Waterloo",p:"$$"},
 
   // ══════════ FAST FOOD ══════════
   {n:"Chick-fil-A",c:"Chicken Sandwiches",t:["fast"],a:"Waterloo",p:"$"},
@@ -374,6 +387,16 @@ const FALLBACK_RESTAURANTS = [
   {n:"T & T BBQ",c:"BBQ (Food Truck)",t:["truck","bbq"],a:"Waterloo area",p:"$"},
   {n:"Cedar Valley Fish Market",c:"Seafood (Truck & Market)",t:["truck"],a:"Waterloo",p:"$$"},
   {n:"Rodney's Jamaican Jerk",c:"Jamaican (Food Truck)",t:["truck"],a:"Waterloo",p:"$"},
+
+  // ══════════ LOST ISLAND THEME PARK DINING ══════════
+  {n:"Whalebone Grill",c:"Grill (Lost Island)",t:["american"],a:"Lost Island, Waterloo",p:"$$"},
+  {n:"Castaway Cafe",c:"Cafe (Lost Island Waterpark)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
+  {n:"Tree Top Cafe",c:"Cafe (Lost Island Waterpark)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
+  {n:"High Tide Pizza",c:"Pizza (Lost Island Waterpark)",t:["pizza","fast"],a:"Lost Island, Waterloo",p:"$"},
+  {n:"Udaran Delights",c:"Snacks (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
+  {n:"Ummi Ummis",c:"Snacks (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
+  {n:"Totara Market",c:"Market (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
+  {n:"Kotaki Treats",c:"Treats (Lost Island)",t:["fast"],a:"Lost Island, Waterloo",p:"$"},
 ].map(r => ({
   name: r.n, cuisine: r.c, types: r.t, address: r.a + ", IA",
   rating: 0, totalRatings: 0, price: r.p, placeId: "",
