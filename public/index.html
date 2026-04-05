@@ -674,6 +674,8 @@ input.search-input:focus, select.search-input:focus {
 .action-modal-footer {
   margin-top: 1.2rem;
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
   justify-content: center;
 }
 .action-modal-footer .cta-primary {
@@ -1080,6 +1082,7 @@ textarea:focus-visible,
     <div id="battle-area"></div>
     <div class="action-modal-footer">
       <button type="button" class="cta-primary" id="action-reroll-btn">Pick another <span class="cta-icon">🔄</span></button>
+      <button type="button" class="cta-tertiary" id="battle-defend-btn" hidden>Defend the crown <span class="cta-icon">⚔</span></button>
     </div>
   </div>
 </div>
@@ -1512,11 +1515,20 @@ function revealWinner(winner) {
 }
 
 let lastAction = null;
+let battleChampion = null;
+function updateBattleDefendBtn() {
+  const btn = document.getElementById('battle-defend-btn');
+  if (!btn) return;
+  if (battleChampion) btn.removeAttribute('hidden');
+  else btn.setAttribute('hidden', '');
+}
 document.getElementById('pick-btn').addEventListener('click', () => {
   const pool = getFilteredPool();
   const result = document.getElementById('result');
   const pickBtn = document.getElementById('pick-btn');
   document.getElementById('battle-area').innerHTML = '';
+  battleChampion = null;
+  updateBattleDefendBtn();
   lastAction = 'pick';
   if (pool.length === 0) {
     result.innerHTML = `<div class="card"><h2>No restaurants match</h2><div class="cuisine">Try removing some filters.</div></div>`;
@@ -1571,6 +1583,8 @@ document.getElementById('battle-btn').addEventListener('click', () => {
   if (pool.length < 3) { toast('Need at least 3 restaurants for Battle Mode'); return; }
   const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
   document.getElementById('result').innerHTML = '';
+  battleChampion = null;
+  updateBattleDefendBtn();
   lastAction = 'battle';
   openModal('action-modal');
   renderBattle(shuffled);
@@ -1582,11 +1596,42 @@ document.getElementById('action-reroll-btn').addEventListener('click', () => {
   else document.getElementById('pick-btn').click();
 });
 
+// Keep the current battle winner and face two fresh challengers
+document.getElementById('battle-defend-btn').addEventListener('click', () => {
+  if (!battleChampion) return;
+  const challengerPool = getFilteredPool().filter(r => r.id !== battleChampion.id);
+  if (challengerPool.length < 1) {
+    toast('No challengers left for this filter');
+    return;
+  }
+  const picked = [...challengerPool].sort(() => Math.random() - 0.5).slice(0, Math.min(2, challengerPool.length));
+  const champion = battleChampion;
+  document.getElementById('result').innerHTML = '';
+  battleChampion = null;
+  updateBattleDefendBtn();
+  lastAction = 'battle';
+  renderBattle([champion, ...picked]);
+});
+
+// Reset the champion/defend state whenever the action modal is dismissed
+(function wireActionModalReset() {
+  const actionModalEl = document.getElementById('action-modal');
+  if (!actionModalEl) return;
+  const reset = () => { battleChampion = null; updateBattleDefendBtn(); };
+  actionModalEl.addEventListener('click', (e) => {
+    if (e.target === actionModalEl) reset();
+  });
+  const closeBtn = actionModalEl.querySelector('.modal-close');
+  if (closeBtn) closeBtn.addEventListener('click', reset);
+})();
+
 function renderBattle(contestants) {
   const area = document.getElementById('battle-area');
   if (contestants.length === 1) {
     area.innerHTML = '';
+    battleChampion = contestants[0];
     revealWinner(contestants[0]);
+    updateBattleDefendBtn();
     return;
   }
   area.innerHTML = `
