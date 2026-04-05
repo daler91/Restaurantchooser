@@ -252,71 +252,12 @@ main { max-width: 720px; margin: 0 auto; padding: 0.25rem 1rem 1rem; }
 .filter-card {
   background: var(--surface-container-low);
   border-radius: 2rem;
-  padding: 14px 14px 14px 14px;
+  padding: 18px 20px 22px 22px;
   margin-top: 0.85rem;
   box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
 }
-.filter-card .label { display: block; margin: 1rem 0 0.55rem; }
+.filter-card .label { display: block; margin: 1.1rem 0 0.7rem; }
 .filter-card .label:first-child { margin-top: 0.2rem; }
-
-/* Collapsible filter summary (compact row) */
-.filter-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-}
-.filter-summary .search-wrap {
-  flex: 1;
-  min-width: 0;
-  margin-bottom: 0;
-  padding: 0.65rem 1rem;
-}
-.filter-summary .search-wrap .search-input { font-size: 0.9rem; }
-.summary-chip {
-  flex-shrink: 0;
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.6rem 0.85rem;
-  border: none;
-  background: var(--surface-container-high);
-  color: var(--on-surface-variant);
-  border-radius: 9999px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.78rem; font-weight: 700;
-  transition: background 0.2s, color 0.2s, transform 0.12s;
-  max-width: 42vw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.summary-chip:hover { background: var(--surface-container-highest); }
-.summary-chip:active { transform: scale(0.96); }
-.summary-chip.is-set {
-  background: var(--secondary);
-  color: var(--on-secondary);
-  box-shadow: 0 6px 14px -6px rgba(116,87,0,0.45);
-}
-.summary-chip .caret {
-  display: inline-block;
-  transition: transform 0.3s ease;
-  font-size: 0.65rem;
-  opacity: 0.8;
-}
-.filter-card.is-open .summary-chip .caret { transform: rotate(180deg); }
-
-/* Collapsible body */
-.filter-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1);
-}
-.filter-body > .filter-body-inner {
-  overflow: hidden;
-  min-height: 0;
-}
-.filter-card.is-open .filter-body { grid-template-rows: 1fr; }
-.filter-body-inner { padding-top: 0.6rem; }
 
 /* Horizontal scroll chips (cuisine row) */
 .filters.scroll-row {
@@ -694,6 +635,52 @@ input.search-input:focus, select.search-input:focus {
   box-shadow: 0 8px 18px -8px rgba(177,32,45,0.4);
 }
 
+/* Action modal (Pick / Battle spotlight) */
+.modal.action-modal {
+  max-width: 520px;
+  padding: 2.2rem 1.6rem 1.6rem;
+  position: relative;
+  text-align: center;
+  background: linear-gradient(180deg,
+    var(--surface-container-lowest) 0%,
+    var(--surface-container-low) 100%);
+  overflow: visible;
+}
+.modal.action-modal #result { margin: 0 auto; min-height: 0; display: flex; align-items: center; justify-content: center; perspective: 800px; }
+.modal.action-modal #result:not(:empty) { margin-bottom: 0.4rem; }
+.modal.action-modal #battle-area { margin: 0 auto; }
+.modal.action-modal #battle-area:not(:empty) { margin-top: 0.2rem; }
+.modal.action-modal #battle-area .battle-grid { margin-top: 0.6rem; }
+.modal-close {
+  position: absolute;
+  top: 0.75rem; right: 0.75rem;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font-size: 1.5rem; line-height: 1;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.2s, transform 0.12s, color 0.2s;
+  z-index: 2;
+}
+.modal-close:hover {
+  background: var(--surface-container-highest);
+  color: var(--primary);
+  transform: scale(1.05);
+}
+.modal-close:active { transform: scale(0.92); }
+.action-modal-footer {
+  margin-top: 1.2rem;
+  display: flex;
+  justify-content: center;
+}
+.action-modal-footer .cta-primary {
+  padding: 0.85rem 1.6rem;
+  font-size: 0.95rem;
+}
+
 /* Bottom tab nav */
 nav.tab-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -953,57 +940,44 @@ textarea:focus-visible,
       </div>
     </div>
 
-    <div class="filter-card" id="filter-card">
-      <div class="filter-summary">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" placeholder="Search a vibe…">
-        </div>
-        <button type="button" class="summary-chip" id="summary-toggle" aria-expanded="false" aria-controls="filter-body">
-          <span id="summary-label">All · Any $</span>
-          <span class="caret">▾</span>
-        </button>
+    <div class="filter-card">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search a specific vibe…">
       </div>
 
-      <div class="filter-body" id="filter-body">
-        <div class="filter-body-inner">
-          <div class="label">Cuisine Type</div>
-          <div class="filters scroll-row" id="category-filters">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="fine">Fine Dining</button>
-            <button class="filter-btn" data-filter="american">American</button>
-            <button class="filter-btn" data-filter="mexican">Mexican</button>
-            <button class="filter-btn" data-filter="asian">Asian</button>
-            <button class="filter-btn" data-filter="bbq">BBQ</button>
-            <button class="filter-btn" data-filter="pizza">Pizza</button>
-            <button class="filter-btn" data-filter="breakfast">Breakfast</button>
-            <button class="filter-btn" data-filter="burger">Burgers</button>
-            <button class="filter-btn" data-filter="bar">Bar &amp; Grill</button>
-            <button class="filter-btn" data-filter="fast">Fast Food</button>
-            <button class="filter-btn" data-filter="coffee">Coffee &amp; Bakery</button>
-            <button class="filter-btn" data-filter="truck">Food Trucks</button>
-          </div>
+      <div class="label">Cuisine Type</div>
+      <div class="filters scroll-row" id="category-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="fine">Fine Dining</button>
+        <button class="filter-btn" data-filter="american">American</button>
+        <button class="filter-btn" data-filter="mexican">Mexican</button>
+        <button class="filter-btn" data-filter="asian">Asian</button>
+        <button class="filter-btn" data-filter="bbq">BBQ</button>
+        <button class="filter-btn" data-filter="pizza">Pizza</button>
+        <button class="filter-btn" data-filter="breakfast">Breakfast</button>
+        <button class="filter-btn" data-filter="burger">Burgers</button>
+        <button class="filter-btn" data-filter="bar">Bar &amp; Grill</button>
+        <button class="filter-btn" data-filter="fast">Fast Food</button>
+        <button class="filter-btn" data-filter="coffee">Coffee &amp; Bakery</button>
+        <button class="filter-btn" data-filter="truck">Food Trucks</button>
+      </div>
 
-          <div class="label">Price Range</div>
-          <div class="filters price-filters" id="price-filters">
-            <button class="filter-btn" data-price="$">$</button>
-            <button class="filter-btn" data-price="$$">$$</button>
-            <button class="filter-btn" data-price="$$$">$$$</button>
-            <button class="filter-btn" data-price="$$$$">$$$$</button>
-          </div>
+      <div class="label">Price Range</div>
+      <div class="filters price-filters" id="price-filters">
+        <button class="filter-btn" data-price="$">$</button>
+        <button class="filter-btn" data-price="$$">$$</button>
+        <button class="filter-btn" data-price="$$$">$$$</button>
+        <button class="filter-btn" data-price="$$$$">$$$$</button>
+      </div>
 
-          <div class="toggle-row">
-            <label><input type="checkbox" id="toggle-fav-only"> Favorites only</label>
-            <label><input type="checkbox" id="toggle-exclude-recent"> Exclude last 5 picks</label>
-          </div>
-        </div>
+      <div class="toggle-row">
+        <label><input type="checkbox" id="toggle-fav-only"> Favorites only</label>
+        <label><input type="checkbox" id="toggle-exclude-recent"> Exclude last 5 picks</label>
       </div>
     </div>
 
     <div class="status-line" id="status-line">Loading restaurants…</div>
-
-    <div id="result"></div>
-    <div id="battle-area"></div>
 
     <div id="recent-picks-section" style="display:none;">
       <h3 class="section-title">Recent Picks</h3>
@@ -1097,6 +1071,18 @@ textarea:focus-visible,
     <span>Stats</span>
   </button>
 </nav>
+
+<!-- Action modal (Pick / Battle result spotlight) -->
+<div class="modal-overlay" id="action-modal">
+  <div class="modal action-modal">
+    <button type="button" class="modal-close" data-close-modal="action-modal" aria-label="Close">×</button>
+    <div id="result"></div>
+    <div id="battle-area"></div>
+    <div class="action-modal-footer">
+      <button type="button" class="cta-primary" id="action-reroll-btn">Pick another <span class="cta-icon">🔄</span></button>
+    </div>
+  </div>
+</div>
 
 <!-- Suggest modal -->
 <div class="modal-overlay" id="suggest-modal">
@@ -1427,7 +1413,6 @@ document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
     btn.classList.add('active');
     state.activeCategory = btn.dataset.filter;
     updateStatus();
-    updateFilterSummary();
   });
 });
 document.querySelectorAll('#price-filters .filter-btn').forEach(btn => {
@@ -1436,7 +1421,6 @@ document.querySelectorAll('#price-filters .filter-btn').forEach(btn => {
     if (state.activePrices.has(p)) { state.activePrices.delete(p); btn.classList.remove('active'); }
     else { state.activePrices.add(p); btn.classList.add('active'); }
     updateStatus();
-    updateFilterSummary();
   });
 });
 let searchTimer;
@@ -1447,44 +1431,11 @@ document.getElementById('search-input').addEventListener('input', (e) => {
 document.getElementById('toggle-fav-only').checked = state.favOnly;
 document.getElementById('toggle-exclude-recent').checked = state.excludeRecent;
 document.getElementById('toggle-fav-only').addEventListener('change', (e) => {
-  state.favOnly = e.target.checked; LS.set('rc_favoritesOnly', state.favOnly); updateStatus(); updateFilterSummary();
+  state.favOnly = e.target.checked; LS.set('rc_favoritesOnly', state.favOnly); updateStatus();
 });
 document.getElementById('toggle-exclude-recent').addEventListener('change', (e) => {
-  state.excludeRecent = e.target.checked; LS.set('rc_excludeRecent', state.excludeRecent); updateStatus(); updateFilterSummary();
+  state.excludeRecent = e.target.checked; LS.set('rc_excludeRecent', state.excludeRecent); updateStatus();
 });
-
-// ──────────── Collapsible filter card ────────────
-function updateFilterSummary() {
-  const lbl = document.getElementById('summary-label');
-  const chip = document.getElementById('summary-toggle');
-  if (!lbl || !chip) return;
-  const catBtn = document.querySelector('#category-filters .filter-btn.active');
-  const catLabel = state.activeCategory === 'all' ? 'All' : (catBtn ? catBtn.textContent.trim() : 'All');
-  let priceLabel;
-  if (state.activePrices.size === 0) priceLabel = 'Any $';
-  else if (state.activePrices.size === 1) priceLabel = [...state.activePrices][0];
-  else priceLabel = state.activePrices.size + ' prices';
-  const extras = [];
-  if (state.favOnly) extras.push('♥');
-  if (state.excludeRecent) extras.push('−5');
-  const extraStr = extras.length ? ' · ' + extras.join(' ') : '';
-  lbl.textContent = `${catLabel} · ${priceLabel}${extraStr}`;
-  const isSet = state.activeCategory !== 'all' || state.activePrices.size > 0 || state.favOnly || state.excludeRecent;
-  chip.classList.toggle('is-set', isSet);
-}
-const filterCard = document.getElementById('filter-card');
-const summaryToggle = document.getElementById('summary-toggle');
-if (filterCard && summaryToggle) {
-  const startOpen = LS.get('rc_filters_open', false);
-  if (startOpen) filterCard.classList.add('is-open');
-  summaryToggle.setAttribute('aria-expanded', startOpen ? 'true' : 'false');
-  summaryToggle.addEventListener('click', () => {
-    const open = filterCard.classList.toggle('is-open');
-    summaryToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    LS.set('rc_filters_open', open);
-  });
-}
-updateFilterSummary();
 
 function addToHistory(r) {
   const entry = { id: r.id, name: r.name, cuisine: r.cuisine, timestamp: Date.now() };
@@ -1560,14 +1511,19 @@ function revealWinner(winner) {
   launchConfetti();
 }
 
+let lastAction = null;
 document.getElementById('pick-btn').addEventListener('click', () => {
   const pool = getFilteredPool();
   const result = document.getElementById('result');
   const pickBtn = document.getElementById('pick-btn');
+  document.getElementById('battle-area').innerHTML = '';
+  lastAction = 'pick';
   if (pool.length === 0) {
     result.innerHTML = `<div class="card"><h2>No restaurants match</h2><div class="cuisine">Try removing some filters.</div></div>`;
+    openModal('action-modal');
     return;
   }
+  openModal('action-modal');
   pickBtn.disabled = true;
   pickBtn.classList.add('spinning');
   const winner = pool[Math.floor(Math.random() * pool.length)];
@@ -1614,7 +1570,16 @@ document.getElementById('battle-btn').addEventListener('click', () => {
   const pool = getFilteredPool();
   if (pool.length < 3) { toast('Need at least 3 restaurants for Battle Mode'); return; }
   const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+  document.getElementById('result').innerHTML = '';
+  lastAction = 'battle';
+  openModal('action-modal');
   renderBattle(shuffled);
+});
+
+// Reroll the most recent action from inside the modal
+document.getElementById('action-reroll-btn').addEventListener('click', () => {
+  if (lastAction === 'battle') document.getElementById('battle-btn').click();
+  else document.getElementById('pick-btn').click();
 });
 
 function renderBattle(contestants) {
