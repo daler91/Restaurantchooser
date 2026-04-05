@@ -134,17 +134,18 @@
 <div class="container">
     <h1>Where should we eat?</h1>
     <p class="subtitle">Waterloo &amp; Cedar Falls, Iowa</p>
-    <p class="source-note" id="source-note">Top picks from Cedar Valley foodies</p>
+    <p class="source-note" id="source-note">Sourced from the WCF Area Foodies group &amp; local picks</p>
 
     <div class="filters">
         <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="restaurant">Restaurant</button>
-        <button class="filter-btn" data-filter="bar">Bar & Grill</button>
-        <button class="filter-btn" data-filter="cafe">Cafe</button>
-        <button class="filter-btn" data-filter="pizza">Pizza</button>
-        <button class="filter-btn" data-filter="mexican">Mexican</button>
-        <button class="filter-btn" data-filter="chinese">Chinese</button>
+        <button class="filter-btn" data-filter="fine">Fine Dining</button>
         <button class="filter-btn" data-filter="american">American</button>
+        <button class="filter-btn" data-filter="mexican">Mexican</button>
+        <button class="filter-btn" data-filter="bbq">BBQ</button>
+        <button class="filter-btn" data-filter="pizza">Pizza</button>
+        <button class="filter-btn" data-filter="breakfast">Breakfast</button>
+        <button class="filter-btn" data-filter="burger">Burgers</button>
+        <button class="filter-btn" data-filter="bar">Bar & Grill</button>
     </div>
 
     <div class="restaurant-count" id="restaurant-count"></div>
@@ -171,37 +172,67 @@ const result = document.getElementById("result");
 const sourceNote = document.getElementById("source-note");
 const countEl = document.getElementById("restaurant-count");
 
-// Hardcoded fallback — Cedar Valley foodie favorites
+// Sourced from Google-indexed posts in the Waterloo-Cedar Falls Area Foodies
+// Facebook group (fb.com/groups/1063717241439850), plus local media (KHAK,
+// WCF Courier, Little Village, Restaurantji) that reference the group.
 const FALLBACK_RESTAURANTS = [
-    { name: "The Brown Bottle", cuisine: "Italian-American", types: ["italian", "restaurant"], address: "1111 Center St, Cedar Falls, IA", rating: 4.5, totalRatings: 900, price: "$$", placeId: "", map: "The+Brown+Bottle+1111+Center+St+Cedar+Falls+IA" },
-    { name: "Galleria de Paco", cuisine: "European-American Fine Dining", types: ["american", "restaurant"], address: "622 Commercial St, Waterloo, IA", rating: 4.6, totalRatings: 350, price: "$$$", placeId: "", map: "Galleria+de+Paco+622+Commercial+St+Waterloo+IA" },
-    { name: "Montage", cuisine: "American / Creative", types: ["american", "restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 400, price: "$$", placeId: "", map: "Montage+Cedar+Falls+IA" },
-    { name: "SingleSpeed Brewing Co", cuisine: "Brewpub / American", types: ["bar", "restaurant"], address: "325 Commercial St, Waterloo, IA", rating: 4.5, totalRatings: 600, price: "$$", placeId: "", map: "SingleSpeed+Brewing+325+Commercial+St+Waterloo+IA" },
-    { name: "Whiskey Road Tavern & Grill", cuisine: "American / Bar & Grill", types: ["bar", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 500, price: "$$", placeId: "", map: "Whiskey+Road+Tavern+Grill+Cedar+Falls+IA" },
-    { name: "George's Local", cuisine: "American / Farm-to-Table", types: ["american", "restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 300, price: "$$", placeId: "", map: "Georges+Local+Cedar+Falls+IA" },
-    { name: "1850 Patio & Grill", cuisine: "American / Grilled", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 250, price: "$$", placeId: "", map: "1850+Patio+Grill+Waterloo+IA" },
-    { name: "Iowa PrimeHouse", cuisine: "Steakhouse / Local", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.7, totalRatings: 200, price: "$$$", placeId: "", map: "Iowa+PrimeHouse+Waterloo+IA" },
-    { name: "Rodney's Kitchen", cuisine: "American Comfort Food", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 180, price: "$$", placeId: "", map: "Rodneys+Kitchen+Waterloo+IA" },
-    { name: "King Bucks", cuisine: "Gourmet Burgers", types: ["american", "restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 450, price: "$$", placeId: "", map: "King+Bucks+Cedar+Falls+IA" },
-    { name: "Peppers Grill & Sports Bar", cuisine: "Burgers / Bar & Grill", types: ["bar", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 500, price: "$$", placeId: "", map: "Peppers+Grill+Cedar+Falls+IA" },
-    { name: "Southtown Restaurant & Bar", cuisine: "Burgers / Tenderloin", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 300, price: "$", placeId: "", map: "Southtown+Restaurant+Bar+Waterloo+IA" },
-    { name: "Mac's Drive-In", cuisine: "Classic Drive-In / Burgers", types: ["american", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 350, price: "$", placeId: "", map: "Macs+Drive+In+Waterloo+IA" },
-    { name: "Starbeck's Smokehouse", cuisine: "BBQ / Smoked Meats", types: ["restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 280, price: "$$", placeId: "", map: "Starbecks+Smokehouse+Waterloo+IA" },
-    { name: "Three Amigos Family Restaurant", cuisine: "Authentic Mexican", types: ["mexican", "restaurant"], address: "Waterloo, IA", rating: 4.3, totalRatings: 400, price: "$", placeId: "", map: "Three+Amigos+Family+Restaurant+Waterloo+IA" },
-    { name: "Los Cabos Mexican Grill", cuisine: "Mexican", types: ["mexican", "restaurant"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 350, price: "$$", placeId: "", map: "Los+Cabos+Mexican+Grill+Cedar+Falls+IA" },
-    { name: "Rudy's Tacos", cuisine: "Tex-Mex", types: ["mexican", "restaurant"], address: "Waterloo, IA", rating: 4.3, totalRatings: 500, price: "$", placeId: "", map: "Rudys+Tacos+Waterloo+IA" },
-    { name: "Thai Bistro", cuisine: "Thai", types: ["restaurant"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 300, price: "$$", placeId: "", map: "Thai+Bistro+Cedar+Falls+IA" },
-    { name: "Annie's Vietnamese Sandwiches", cuisine: "Vietnamese / Banh Mi", types: ["restaurant"], address: "Waterloo, IA", rating: 4.6, totalRatings: 150, price: "$", placeId: "", map: "Annies+Vietnamese+Sandwiches+Waterloo+IA" },
-    { name: "Brown Bottle Waterloo", cuisine: "Italian", types: ["italian", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 700, price: "$$", placeId: "", map: "Brown+Bottle+Waterloo+IA" },
-    { name: "Basal Pizza", cuisine: "Artisan Pizza", types: ["pizza", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 200, price: "$$", placeId: "", map: "Basal+Pizza+Waterloo+IA" },
-    { name: "Tony's La Pizzeria", cuisine: "Pizza / Italian", types: ["pizza", "italian", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 350, price: "$$", placeId: "", map: "Tonys+La+Pizzeria+Waterloo+IA" },
-    { name: "Morg's", cuisine: "Classic Diner / Breakfast", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.4, totalRatings: 400, price: "$", placeId: "", map: "Morgs+Waterloo+IA" },
-    { name: "Newton's Paradise Cafe", cuisine: "Breakfast / Brunch", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 250, price: "$", placeId: "", map: "Newtons+Paradise+Cafe+Waterloo+IA" },
-    { name: "J's Homestyle Cooking (Mama J's)", cuisine: "Breakfast / Comfort Food", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.6, totalRatings: 300, price: "$", placeId: "", map: "Js+Homestyle+Cooking+Waterloo+IA" },
-    { name: "Highway 63 Diner", cuisine: "Classic Diner / Breakfast", types: ["cafe", "restaurant"], address: "Waterloo, IA", rating: 4.5, totalRatings: 200, price: "$", placeId: "", map: "Highway+63+Diner+Waterloo+IA" },
-    { name: "Oh My Grill", cuisine: "Brunch / American", types: ["cafe", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 250, price: "$$", placeId: "", map: "Oh+My+Grill+Cedar+Falls+IA" },
-    { name: "Patton Diner", cuisine: "Diner / Breakfast", types: ["cafe", "restaurant"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 200, price: "$", placeId: "", map: "Patton+Diner+Cedar+Falls+IA" },
-    { name: "The Horny Toad American Bar & Grill", cuisine: "American / Bar & Grill", types: ["bar", "american", "restaurant"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 350, price: "$$", placeId: "", map: "Horny+Toad+American+Bar+Grill+Cedar+Falls+IA" },
+    // ── Fine Dining (mentioned in Foodies "fine dining" threads) ──
+    { name: "Montage", cuisine: "Creative Fine Dining", types: ["fine", "american"], address: "Downtown Cedar Falls, IA", rating: 4.7, totalRatings: 420, price: "$$$", placeId: "", map: "Montage+Cedar+Falls+IA" },
+    { name: "Galleria de Paco", cuisine: "European-American Fine Dining", types: ["fine", "american"], address: "622 Commercial St, Waterloo, IA", rating: 4.6, totalRatings: 350, price: "$$$", placeId: "", map: "Galleria+de+Paco+622+Commercial+St+Waterloo+IA" },
+    { name: "Iowa PrimeHouse", cuisine: "Farm-to-Fork Steakhouse", types: ["fine", "american"], address: "202 S Cherry St, Waterloo, IA", rating: 4.8, totalRatings: 210, price: "$$$", placeId: "", map: "Iowa+PrimeHouse+Waterloo+IA" },
+    { name: "The Stuffed Olive", cuisine: "Seafood / Fine Dining", types: ["fine"], address: "620 E 18th St, Cedar Falls, IA", rating: 4.5, totalRatings: 280, price: "$$$", placeId: "", map: "The+Stuffed+Olive+Cedar+Falls+IA" },
+
+    // ── Italian (Foodies perennial favorites) ──
+    { name: "The Brown Bottle (Cedar Falls)", cuisine: "Italian-American (since 1972)", types: ["fine", "american"], address: "1111 Center St, Cedar Falls, IA", rating: 4.5, totalRatings: 920, price: "$$", placeId: "", map: "The+Brown+Bottle+1111+Center+St+Cedar+Falls+IA" },
+    { name: "The Brown Bottle (Waterloo)", cuisine: "Italian-American", types: ["american"], address: "Waterloo, IA", rating: 4.4, totalRatings: 710, price: "$$", placeId: "", map: "Brown+Bottle+Waterloo+IA" },
+
+    // ── American / Gastropub (top Foodies mentions) ──
+    { name: "SingleSpeed Brewing Co", cuisine: "Brewpub / American", types: ["bar", "american"], address: "325 Commercial St, Waterloo, IA", rating: 4.5, totalRatings: 620, price: "$$", placeId: "", map: "SingleSpeed+Brewing+325+Commercial+St+Waterloo+IA" },
+    { name: "Deringer's Public Parlor", cuisine: "American / Craft Cocktails", types: ["bar", "american"], address: "Downtown Cedar Falls, IA", rating: 4.6, totalRatings: 310, price: "$$", placeId: "", map: "Deringers+Public+Parlor+Cedar+Falls+IA" },
+    { name: "Second State Brewing Co", cuisine: "Brewpub / American", types: ["bar", "american"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 260, price: "$$", placeId: "", map: "Second+State+Brewing+Co+Cedar+Falls+IA" },
+    { name: "George's Local", cuisine: "American / Farm-to-Table", types: ["american"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 300, price: "$$", placeId: "", map: "Georges+Local+Cedar+Falls+IA" },
+    { name: "1850 Patio & Grill", cuisine: "American / Grilled", types: ["american", "bar"], address: "Waterloo, IA", rating: 4.4, totalRatings: 250, price: "$$", placeId: "", map: "1850+Patio+Grill+Waterloo+IA" },
+    { name: "Rodney's Kitchen", cuisine: "American Comfort Food", types: ["american"], address: "Waterloo, IA", rating: 4.5, totalRatings: 180, price: "$$", placeId: "", map: "Rodneys+Kitchen+Waterloo+IA" },
+    { name: "Pump Haus Pub & Grill", cuisine: "American / Bar & Grill", types: ["bar", "burger", "american"], address: "311 Main St, Cedar Falls, IA", rating: 4.4, totalRatings: 480, price: "$$", placeId: "", map: "Pump+Haus+Pub+Grill+Cedar+Falls+IA" },
+    { name: "Whiskey Road Tavern & Grill", cuisine: "American / Bar & Grill", types: ["bar", "american"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 500, price: "$$", placeId: "", map: "Whiskey+Road+Tavern+Grill+Cedar+Falls+IA" },
+    { name: "The Horny Toad American Bar & Grill", cuisine: "American / Bar & Grill", types: ["bar", "american"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 350, price: "$$", placeId: "", map: "Horny+Toad+American+Bar+Grill+Cedar+Falls+IA" },
+
+    // ── Burgers (Foodies "best burger" threads) ──
+    { name: "King Bucks", cuisine: "Gourmet Burgers / Drive-Thru", types: ["burger", "american"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 460, price: "$$", placeId: "", map: "King+Bucks+Cedar+Falls+IA" },
+    { name: "Bigfoot Betty's", cuisine: "Tenderloins / Burgers", types: ["burger", "american"], address: "419 Main St, Cedar Falls, IA", rating: 4.6, totalRatings: 190, price: "$$", placeId: "", map: "Bigfoot+Bettys+Cedar+Falls+IA" },
+    { name: "Peppers Grill & Sports Bar", cuisine: "Burgers / Bar & Grill", types: ["burger", "bar"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 500, price: "$$", placeId: "", map: "Peppers+Grill+Cedar+Falls+IA" },
+    { name: "Southtown Restaurant & Bar", cuisine: "Best Tenderloin / Burgers", types: ["burger", "american"], address: "Waterloo, IA", rating: 4.4, totalRatings: 300, price: "$", placeId: "", map: "Southtown+Restaurant+Bar+Waterloo+IA" },
+    { name: "Mac's Drive-In", cuisine: "Classic 50s Drive-In", types: ["burger", "american"], address: "Waterloo, IA", rating: 4.5, totalRatings: 350, price: "$", placeId: "", map: "Macs+Drive+In+Waterloo+IA" },
+
+    // ── BBQ (Foodies BBQ recommendations) ──
+    { name: "Blue Barn BBQ", cuisine: "Wood-Fired BBQ", types: ["bbq"], address: "Cedar Falls, IA", rating: 4.6, totalRatings: 230, price: "$$", placeId: "", map: "Blue+Barn+BBQ+Cedar+Falls+IA" },
+    { name: "Starbeck's Smokehouse", cuisine: "BBQ / Smoked Meats", types: ["bbq"], address: "Waterloo, IA", rating: 4.5, totalRatings: 280, price: "$$", placeId: "", map: "Starbecks+Smokehouse+Waterloo+IA" },
+    { name: "1st Base BBQ", cuisine: "BBQ", types: ["bbq"], address: "Waterloo, IA", rating: 4.5, totalRatings: 200, price: "$$", placeId: "", map: "1st+Base+BBQ+Waterloo+IA" },
+
+    // ── Mexican (Foodies "best burrito" + "best tacos" threads) ──
+    { name: "Burritos Express Waterloo 2", cuisine: "Burritos / Mexican Street Food", types: ["mexican"], address: "Waterloo, IA", rating: 4.7, totalRatings: 160, price: "$", placeId: "", map: "Burritos+Express+Waterloo+2+IA" },
+    { name: "Tacoz California", cuisine: "California-Style Mexican Street Food", types: ["mexican"], address: "200 W 1st St, Cedar Falls, IA", rating: 4.5, totalRatings: 190, price: "$", placeId: "", map: "Tacoz+California+Cedar+Falls+IA" },
+    { name: "La Cava", cuisine: "Authentic Mexican", types: ["mexican"], address: "126 E Ridgeway Ave, Waterloo, IA", rating: 4.6, totalRatings: 140, price: "$$", placeId: "", map: "La+Cava+Waterloo+IA" },
+    { name: "El Barco Mexican Seafood Bar & Grill", cuisine: "Mexican Seafood", types: ["mexican"], address: "Waterloo, IA", rating: 4.5, totalRatings: 320, price: "$$", placeId: "", map: "El+Barco+Waterloo+IA" },
+    { name: "Los Cabos Mexican Grill", cuisine: "Mexican", types: ["mexican"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 350, price: "$$", placeId: "", map: "Los+Cabos+Mexican+Grill+Cedar+Falls+IA" },
+    { name: "Rudy's Tacos", cuisine: "Tex-Mex", types: ["mexican"], address: "Waterloo, IA", rating: 4.3, totalRatings: 500, price: "$", placeId: "", map: "Rudys+Tacos+Waterloo+IA" },
+
+    // ── Pizza (Foodies pizza threads) ──
+    { name: "Basal Pizza", cuisine: "Neapolitan & Detroit-Style Pizza", types: ["pizza"], address: "Waterloo, IA", rating: 4.6, totalRatings: 210, price: "$$", placeId: "", map: "Basal+Pizza+Waterloo+IA" },
+    { name: "Tony's La Pizzeria", cuisine: "Pizza / Italian", types: ["pizza"], address: "Waterloo, IA", rating: 4.4, totalRatings: 350, price: "$$", placeId: "", map: "Tonys+La+Pizzeria+Waterloo+IA" },
+
+    // ── Breakfast / Brunch (Foodies breakfast threads) ──
+    { name: "Tata Yaya", cuisine: "Crepes / Waffles / Souffle Pancakes", types: ["breakfast"], address: "Downtown Cedar Falls, IA", rating: 4.7, totalRatings: 180, price: "$$", placeId: "", map: "Tata+Yaya+Cedar+Falls+IA" },
+    { name: "Morg's", cuisine: "Classic Diner (50+ years)", types: ["breakfast", "american"], address: "Waterloo, IA", rating: 4.4, totalRatings: 400, price: "$", placeId: "", map: "Morgs+Waterloo+IA" },
+    { name: "J's Homestyle Cooking (Mama J's)", cuisine: "Breakfast / Comfort Food", types: ["breakfast"], address: "Waterloo, IA", rating: 4.6, totalRatings: 300, price: "$", placeId: "", map: "Js+Homestyle+Cooking+Waterloo+IA" },
+    { name: "Newton's Paradise Cafe", cuisine: "Breakfast / Brunch", types: ["breakfast"], address: "Waterloo, IA", rating: 4.5, totalRatings: 250, price: "$", placeId: "", map: "Newtons+Paradise+Cafe+Waterloo+IA" },
+    { name: "Highway 63 Diner", cuisine: "Scratch-Made Diner", types: ["breakfast", "american"], address: "Waterloo, IA", rating: 4.5, totalRatings: 200, price: "$", placeId: "", map: "Highway+63+Diner+Waterloo+IA" },
+    { name: "Oh My Grill", cuisine: "Brunch / Mediterranean", types: ["breakfast", "american"], address: "Cedar Falls, IA", rating: 4.4, totalRatings: 250, price: "$$", placeId: "", map: "Oh+My+Grill+Cedar+Falls+IA" },
+    { name: "Patton Diner", cuisine: "Diner / Breakfast", types: ["breakfast"], address: "Cedar Falls, IA", rating: 4.3, totalRatings: 200, price: "$", placeId: "", map: "Patton+Diner+Cedar+Falls+IA" },
+
+    // ── Other Foodies mentions ──
+    { name: "Thai Bistro", cuisine: "Thai", types: ["american"], address: "Cedar Falls, IA", rating: 4.5, totalRatings: 300, price: "$$", placeId: "", map: "Thai+Bistro+Cedar+Falls+IA" },
+    { name: "Annie's Vietnamese Sandwiches", cuisine: "Vietnamese / Banh Mi", types: ["american"], address: "Waterloo, IA", rating: 4.6, totalRatings: 150, price: "$", placeId: "", map: "Annies+Vietnamese+Sandwiches+Waterloo+IA" },
 ];
 
 function useFallback() {
