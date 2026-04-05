@@ -665,10 +665,11 @@ function toggleFavorite(id) {
   if (idx >= 0) state.favorites.splice(idx, 1);
   else state.favorites.push(id);
   LS.set('rc_favorites', state.favorites);
+  const faved = state.favorites.includes(id);
   document.querySelectorAll(`[data-fav-id="${id}"]`).forEach(btn => {
-    const faved = state.favorites.includes(id);
     btn.classList.toggle('faved', faved);
-    btn.textContent = faved ? '❤' : '♡';
+    if (btn.id === 'detail-fav-btn') btn.textContent = faved ? '❤ Unfavorite' : '♡ Favorite';
+    else if (btn.classList.contains('fav-heart')) btn.textContent = faved ? '❤' : '♡';
   });
   renderFavorites();
 }
@@ -684,11 +685,25 @@ document.addEventListener('click', (e) => {
 function showDetail(id) {
   const r = state.restaurants.find(x => x.id === id);
   if (!r) return;
-  document.getElementById('detail-modal-content').innerHTML = renderCard(r) +
-    `<div class="modal-actions"><button class="cancel" data-close-modal="detail-modal">Close</button></div>`;
-  document.getElementById('detail-modal-content').querySelectorAll('[data-close-modal]').forEach(el => {
-    el.addEventListener('click', () => closeModal('detail-modal'));
-  });
+  const tagChips = (r.tags || []).map(t => {
+    const cat = CATEGORIES.find(c => c.key === t);
+    return cat ? `<span class="badge">${cat.emoji} ${cat.label}</span>` : '';
+  }).join('');
+  const isFav = state.favorites.includes(r.id);
+  document.getElementById('detail-modal-content').innerHTML = `
+    <h3>${emojiFor(r)} ${escapeHtml(r.name)}</h3>
+    <div style="color:var(--text-dim); margin-bottom:0.4rem;">${escapeHtml(r.cuisine)}</div>
+    <div style="color:var(--text-faint); font-size:0.9rem; margin-bottom:0.6rem;">${escapeHtml(r.address)}</div>
+    <div style="font-size:1.1rem; font-weight:600; color:var(--accent); margin-bottom:0.6rem;">${r.price}</div>
+    ${r.rating > 0 ? `<div style="color:var(--gold); margin-bottom:0.6rem;">${starsFor(r.rating)} · ${r.total_ratings} reviews</div>` : ''}
+    ${tagChips ? `<div class="badges">${tagChips}</div>` : ''}
+    <a class="maps-link" href="${mapsUrl(r)}" target="_blank" rel="noopener" style="display:inline-block; margin-top:0.8rem; color:var(--accent); border-bottom:1px solid var(--accent); text-decoration:none;">Open in Google Maps →</a>
+    <div class="modal-actions">
+      <button class="cancel" data-fav-id="${r.id}" id="detail-fav-btn">${isFav ? '❤ Unfavorite' : '♡ Favorite'}</button>
+      <button class="submit" data-close-modal="detail-modal">Close</button>
+    </div>
+  `;
+  document.getElementById('detail-modal-content').querySelector('[data-close-modal]').addEventListener('click', () => closeModal('detail-modal'));
   openModal('detail-modal');
 }
 </script>
@@ -1035,7 +1050,19 @@ function renderStats() {
     ${topCuisine ? `<div class="stat-box"><h4>Top Cuisine</h4><div class="big-num">${(CATEGORIES.find(c => c.key === topCuisine[0]) || {label: topCuisine[0]}).label}</div></div>` : ''}
     <div class="stat-box"><h4>By Cuisine</h4>${cuisineRows}</div>
     <div class="stat-box"><h4>By Price</h4>${priceRows}</div>
+    <div style="text-align:center; margin-top:1rem;">
+      <button class="secondary-btn" id="clear-history-btn">Clear History</button>
+    </div>
   `;
+  const clearBtn = document.getElementById('clear-history-btn');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    if (!confirm('Clear all pick history?')) return;
+    state.history = [];
+    LS.set('rc_history', []);
+    renderStats();
+    renderRecentPicks();
+    toast('History cleared');
+  });
 }
 
 // ──────────── Admin ────────────
@@ -1169,6 +1196,7 @@ document.getElementById('ed-submit').addEventListener('click', async () => {
 applyTheme(state.theme);
 initSuggestTags();
 initEditTags();
+renderRecentPicks();
 if (state.adminPin) {
   // verify still valid
   fetch('/api/admin/auth', { method: 'POST', headers: { 'x-admin-pin': state.adminPin } })
